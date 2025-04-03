@@ -4,7 +4,7 @@ import zipfile
 from datasets import load_dataset
 import kagglehub
 
-PATH = "raw_data"
+PATH = "../raw_data"
 
 def create_data_folder():
     global PATH
