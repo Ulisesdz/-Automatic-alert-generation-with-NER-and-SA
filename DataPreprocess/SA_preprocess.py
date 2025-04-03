@@ -98,8 +98,8 @@ def process_sentiment140():
         return
 
     # Crear carpetas de salida si no existen
-    os.makedirs("data/SA/train", exist_ok=True)
-    os.makedirs("data/SA/test", exist_ok=True)
+    os.makedirs("../data/SA/train", exist_ok=True)
+    os.makedirs("../data/SA/test", exist_ok=True)
 
     # Cargar dataset
     df = pd.read_csv(file_path, encoding="latin1", header=None, names=["target", "ids", "date", "flag", "user", "text"])
