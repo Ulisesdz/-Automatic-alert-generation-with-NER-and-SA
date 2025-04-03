@@ -4,7 +4,7 @@ import pandas as pd
 from datasets import Dataset, Features, Sequence, Value, ClassLabel
 
 # Ruta base
-base_path = "../data/conll2003"
+base_path = "../raw_data/conll2003"
 
 # Splits a procesar
 splits = ["train", "test", "validation"]
@@ -52,7 +52,13 @@ for split in splits:
         df[col] = df[col].apply(lambda x: str(x))
 
     # Guardar CSV en la misma carpeta
-    csv_output_path = os.path.join(split_path, f"{split}.csv")
-    df.to_csv(csv_output_path, index=False)
+    os.makedirs("../data/NER/train", exist_ok=True)
+    os.makedirs("../data/NER/test", exist_ok=True)
+    if split == "test":
+        csv_output_path = os.path.join(split_path, f"../data/NER/test/{split}.csv")
+        df.to_csv(csv_output_path, index=False)
+    else:
+        csv_output_path = os.path.join(split_path, f"../data/NER/train/{split}.csv")
+        df.to_csv(csv_output_path, index=False)
 
     print(f"CSV guardado: {csv_output_path}")
