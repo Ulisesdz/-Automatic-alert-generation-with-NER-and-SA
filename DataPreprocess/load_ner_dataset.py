@@ -55,10 +55,10 @@ for split in splits:
     os.makedirs("../data/NER/train", exist_ok=True)
     os.makedirs("../data/NER/test", exist_ok=True)
     if split == "test":
-        csv_output_path = os.path.join(split_path, f"../data/NER/test/{split}.csv")
+        csv_output_path = f"../data/NER/test/conll2003_{split}.csv"
         df.to_csv(csv_output_path, index=False)
     else:
-        csv_output_path = os.path.join(split_path, f"../data/NER/train/{split}.csv")
+        csv_output_path = f"../data/NER/train/conll2003_{split}.csv"
         df.to_csv(csv_output_path, index=False)
 
     print(f"CSV guardado: {csv_output_path}")
