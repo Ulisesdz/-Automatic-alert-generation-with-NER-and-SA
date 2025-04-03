@@ -92,7 +92,7 @@ def tokenize_tweet(tweet: str) -> List[str]:
     return tokens
 
 def process_sentiment140():
-    file_path = "..raw_data/sentiment140/training.1600000.processed.noemoticon.csv"
+    file_path = "../raw_data/sentiment140/training.1600000.processed.noemoticon.csv"
     if not os.path.exists(file_path):
         print("Sentiment140 dataset not found.")
         return
@@ -115,8 +115,8 @@ def process_sentiment140():
     test_df = df.drop(train_df.index)
 
     # Guardar en archivos CSV
-    train_df.to_csv("..data/SA/train/sentiment140_train.csv", index=False)
-    test_df.to_csv("..data/SA/test/sentiment140_test.csv", index=False)
+    train_df.to_csv("../data/SA/train/sentiment140_train.csv", index=False)
+    test_df.to_csv("../data/SA/test/sentiment140_test.csv", index=False)
 
     print("Processed Sentiment140 and saved train/test splits.")
 

@@ -4,7 +4,7 @@ import pandas as pd
 from datasets import Dataset, Features, Sequence, Value, ClassLabel
 
 # Ruta base
-base_path = "..data/conll2003"
+base_path = "../data/conll2003"
 
 # Splits a procesar
 splits = ["train", "test", "validation"]
