@@ -122,9 +122,6 @@ def collate_fn(
     return texts_padded, labels, lengths
 
 
-
-
-
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

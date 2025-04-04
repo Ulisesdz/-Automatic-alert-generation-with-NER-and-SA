@@ -71,8 +71,8 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
         writer.add_scalar('Loss/Validation', val_loss / len(val_dataloader), epoch)
 
         if epoch % print_every == 0 or epoch == epochs - 1:
-            train_acc = calculate_accuracy_binary_logits(model, train_dataloader, device)
-            val_acc = calculate_accuracy_binary_logits(model, val_dataloader, device)
+            train_acc = calculate_accuracy_SA(model, train_dataloader, device)
+            val_acc = calculate_accuracy_SA(model, val_dataloader, device)
             train_accuracies[epoch], val_accuracies[epoch] = train_acc, val_acc
             print(f"Epoch {epoch + 1}/{epochs} | Train Loss: {total_loss / len(train_dataloader):.4f} | "
                   f"Val Loss: {val_loss / len(val_dataloader):.4f} | "
