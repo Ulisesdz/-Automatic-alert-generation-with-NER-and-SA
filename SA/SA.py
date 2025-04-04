@@ -15,15 +15,16 @@ from utils import calculate_accuracy_SA, train_torch_model
 
 
 # HIPERPARÁMETROS
-batch_size: int = 32
-epochs: int = 100
-print_every: int = 5
+batch_size: int = 64
+epochs: int = 30
+print_every: int = 1
 patience: int = 50
 learning_rate: float = 0.001
-hidden_dim: int = 256
+hidden_dim: int = 128
 num_layers: int = 3
 dropout_p: float = 0.3
 bidirectional: bool = True
+dataset_fraction: float = 0.50
 
 
 def load_word2vec(local_path="models/word2vec-google-news-300.kv"):
@@ -132,20 +133,41 @@ if __name__ == "__main__":
     print("Modelo word2vec cargado")
 
     # Cargar dataset completo de entrenamiento
-    train_csv = "data/SA/train/sentiment140_train.csv"
-    test_csv = "data/SA/test/sentiment140_test.csv"
+    train_csv = "../data/SA/train/sentiment140_train.csv"
+    test_csv = "../data/SA/test/sentiment140_test.csv"
 
     full_train_dataset = Sentiment140Dataset(train_csv, word2vec_model)
 
     # Dividir en 80% train y 20% val
-    train_size = int(0.8 * len(full_train_dataset))
-    val_size = len(full_train_dataset) - train_size
-    train_dataset, val_dataset = random_split(full_train_dataset, 
-                                              [train_size, val_size], 
-                                              generator=torch.Generator().manual_seed(42))
+    # train_size = int(0.8 * len(full_train_dataset))
+    # val_size = len(full_train_dataset) - train_size
+    # train_dataset, val_dataset = random_split(full_train_dataset, 
+    #                                           [train_size, val_size], 
+    #                                           generator=torch.Generator().manual_seed(42))
+
+    # Reduccion del dataset
+    # Obtener un subconjunto del dataset completo
+    subset_size = int(len(full_train_dataset) * dataset_fraction)
+    full_train_subset, _ = random_split(full_train_dataset, 
+                                        [subset_size, len(full_train_dataset) - subset_size], 
+                                        generator=torch.Generator().manual_seed(42))
+
+    # Ahora dividimos en train y validation
+    train_size = int(0.8 * len(full_train_subset))  # 80% para entrenamiento
+    val_size = len(full_train_subset) - train_size  # 20% para validación
+
+    train_dataset, val_dataset = random_split(full_train_subset, 
+                                            [train_size, val_size], 
+                                            generator=torch.Generator().manual_seed(42))
 
     # Cargar dataset de test
-    test_dataset = Sentiment140Dataset(test_csv, word2vec_model)
+    full_test_dataset = Sentiment140Dataset(test_csv, word2vec_model)
+
+    # Reduccion del dataset
+    test_size = int(len(full_test_dataset) * dataset_fraction)
+    test_dataset, _ = random_split(full_test_dataset, 
+                                [test_size, len(full_test_dataset) - test_size], 
+                                generator=torch.Generator().manual_seed(42))
 
     # Crear DataLoaders
     train_dataloader = DataLoader(train_dataset, 
