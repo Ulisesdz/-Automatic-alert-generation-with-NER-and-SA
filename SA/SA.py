@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 import matplotlib.pyplot as plt
 
 # funciones y clases propias
-from LSTM import RNN, ImprovedRNN
+from LSTM import RNN
 from utils import calculate_accuracy_SA, train_torch_model
 
 
@@ -24,7 +24,8 @@ hidden_dim: int = 128
 num_layers: int = 3
 dropout_p: float = 0.3
 bidirectional: bool = True
-dataset_fraction: float = 0.50
+dataset_fraction: float = 0.1
+weight_decay: float = 5e-4
 
 
 def load_word2vec(local_path="models/word2vec-google-news-300.kv"):
@@ -65,7 +66,7 @@ class Sentiment140Dataset(Dataset):
 
         # Evitar valores NaN en los tweets
         self.texts = df["text"].fillna("").apply(lambda x: x.split()).tolist()
-        self.targets = torch.tensor(df["target"].tolist(), dtype=torch.long)
+        self.targets = torch.tensor(df["target"].tolist(), dtype=torch.float)
 
     def word2idx(self, tweet: List[str]) -> torch.Tensor:
         """
@@ -116,7 +117,7 @@ def collate_fn(
 
     lengths = torch.tensor([max(len(t), 1) for t in texts_idx], dtype=torch.long)
     texts_padded = pad_sequence(texts_idx, batch_first=True, padding_value=0)
-    labels = torch.tensor(labels, dtype=torch.long)
+    labels = torch.tensor(labels, dtype=torch.float)
 
     return texts_padded, labels, lengths
 
@@ -125,88 +126,56 @@ def collate_fn(
 
 
 if __name__ == "__main__":
-    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Cargar Word2Vec
     word2vec_model = load_word2vec()
     print("Modelo word2vec cargado")
 
-    # Cargar dataset completo de entrenamiento
     train_csv = "../data/SA/train/sentiment140_train.csv"
     test_csv = "../data/SA/test/sentiment140_test.csv"
 
     full_train_dataset = Sentiment140Dataset(train_csv, word2vec_model)
 
-    # Dividir en 80% train y 20% val
-    # train_size = int(0.8 * len(full_train_dataset))
-    # val_size = len(full_train_dataset) - train_size
-    # train_dataset, val_dataset = random_split(full_train_dataset, 
-    #                                           [train_size, val_size], 
-    #                                           generator=torch.Generator().manual_seed(42))
-
-    # Reduccion del dataset
-    # Obtener un subconjunto del dataset completo
     subset_size = int(len(full_train_dataset) * dataset_fraction)
-    full_train_subset, _ = random_split(full_train_dataset, 
-                                        [subset_size, len(full_train_dataset) - subset_size], 
+    full_train_subset, _ = random_split(full_train_dataset,
+                                        [subset_size, len(full_train_dataset) - subset_size],
                                         generator=torch.Generator().manual_seed(42))
 
-    # Ahora dividimos en train y validation
-    train_size = int(0.8 * len(full_train_subset))  # 80% para entrenamiento
-    val_size = len(full_train_subset) - train_size  # 20% para validación
+    train_size = int(0.8 * len(full_train_subset))
+    val_size = len(full_train_subset) - train_size
+    train_dataset, val_dataset = random_split(full_train_subset, [train_size, val_size], generator=torch.Generator().manual_seed(42))
 
-    train_dataset, val_dataset = random_split(full_train_subset, 
-                                            [train_size, val_size], 
-                                            generator=torch.Generator().manual_seed(42))
-
-    # Cargar dataset de test
     full_test_dataset = Sentiment140Dataset(test_csv, word2vec_model)
-
-    # Reduccion del dataset
     test_size = int(len(full_test_dataset) * dataset_fraction)
-    test_dataset, _ = random_split(full_test_dataset, 
-                                [test_size, len(full_test_dataset) - test_size], 
-                                generator=torch.Generator().manual_seed(42))
+    test_dataset, _ = random_split(full_test_dataset,
+                                   [test_size, len(full_test_dataset) - test_size],
+                                   generator=torch.Generator().manual_seed(42))
 
-    # Crear DataLoaders
-    train_dataloader = DataLoader(train_dataset, 
-                                  batch_size=batch_size, 
-                                  shuffle=True, 
-                                  collate_fn=CollateFn(word2vec_model))
-    
-    val_dataloader = DataLoader(val_dataset, 
-                                batch_size=batch_size, 
-                                shuffle=False, 
-                                collate_fn=CollateFn(word2vec_model))
-    
-    test_dataloader = DataLoader(test_dataset, 
-                                 batch_size=batch_size, 
-                                 shuffle=False, 
-                                 collate_fn=CollateFn(word2vec_model))
-    
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=CollateFn(word2vec_model))
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=CollateFn(word2vec_model))
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=CollateFn(word2vec_model))
+
     print("Dataloaders creados")
 
-    # Crear modelo RNN
     embedding_weights = torch.tensor(word2vec_model.vectors, dtype=torch.float32)
-    rnn_model = ImprovedRNN(embedding_weights=embedding_weights, 
-                    hidden_dim=hidden_dim, 
-                    num_layers=num_layers,
-                    bidirectional=bidirectional,
-                    dropout_p=dropout_p).to(device)
+    rnn_model = RNN(
+        embedding_weights=embedding_weights,
+        hidden_dim=hidden_dim,
+        num_layers=num_layers,
+        bidirectional=bidirectional,
+        dropout_p=dropout_p,
+        output_dim=1  # <--- Salida binaria
+    ).to(device)
     print("Modelo RNN creado")
 
-    # Definir función de pérdida y optimizador
-    criterion = torch.nn.CrossEntropyLoss() # Para multiclase
-    optimizer = torch.optim.Adam(rnn_model.parameters(), lr=learning_rate)
+    criterion = torch.nn.BCEWithLogitsLoss()
+    optimizer = torch.optim.Adam(rnn_model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    # Entrenar el modelo
     train_accuracies, val_accuracies = train_torch_model(
         rnn_model, train_dataloader, val_dataloader, criterion,
         optimizer, epochs, print_every, patience, device=device
     )
 
-    # Evaluación final
     train_acc = calculate_accuracy_SA(rnn_model, train_dataloader, device=device)
     val_acc = calculate_accuracy_SA(rnn_model, val_dataloader, device=device)
     test_acc = calculate_accuracy_SA(rnn_model, test_dataloader, device=device)
@@ -215,7 +184,6 @@ if __name__ == "__main__":
     print(f"🔹 RNN Model - Validation Accuracy: {val_acc:.4f}")
     print(f"🔹 RNN Model - Test Accuracy: {test_acc:.4f}")
 
-    # Graficar evolución de la accuracy
     rnn_epochs, train_accuracies = zip(*sorted(train_accuracies.items()))
     _, val_accuracies = zip(*sorted(val_accuracies.items()))
 
