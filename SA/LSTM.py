@@ -80,16 +80,18 @@ class RNN(nn.Module):
     
 
 class ImprovedRNN(nn.Module):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim=3, 
+    def __init__(self, embedding_weights, hidden_dim, output_dim=3, 
                  num_layers=2, dropout_p=0.3, bidirectional=True):
         super().__init__()
+
+        vocab_size, embedding_dim = embedding_weights.shape
 
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.bidirectional = bidirectional
+        # Capa de embedding con pesos preentrenados
+        self.embedding = nn.Embedding.from_pretrained(embedding_weights, freeze=False)
 
-        # Capa de embedding
-        self.embedding = nn.Embedding(vocab_size, embedding_dim)
 
         # Normalización antes de la LSTM
         self.input_bn = nn.BatchNorm1d(embedding_dim)
@@ -132,8 +134,9 @@ class ImprovedRNN(nn.Module):
         embedded = self.embedding(x)  # [batch, seq_len, emb_dim]
 
         # Normalización de entrada
-        embedded = embedded.permute(0, 2, 1)  # [batch, emb_dim, seq_len]
-        norm_embedded = self.input_bn(embedded)
+        norm_embedded = embedded.permute(0, 2, 1)  # [batch, emb_dim, seq_len]
+        if norm_embedded.size(-1) > 1:
+            norm_embedded = self.input_bn(norm_embedded)
         norm_embedded = norm_embedded.permute(0, 2, 1)  # Restaurar dimensiones
 
         # Inicialización de estados ocultos

@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 import matplotlib.pyplot as plt
 
 # funciones y clases propias
-from LSTM import RNN
+from LSTM import RNN, ImprovedRNN
 from utils import calculate_accuracy_SA, train_torch_model
 
 
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     # Crear modelo RNN
     embedding_weights = torch.tensor(word2vec_model.vectors, dtype=torch.float32)
-    rnn_model = RNN(embedding_weights=embedding_weights, 
+    rnn_model = ImprovedRNN(embedding_weights=embedding_weights, 
                     hidden_dim=hidden_dim, 
                     num_layers=num_layers,
                     bidirectional=bidirectional,

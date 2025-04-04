@@ -53,8 +53,8 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
             optimizer.zero_grad()
             
             outputs = model(features, text_len)  # [batch_size, 3]
-            loss = criterion(outputs, labels)  # CrossEntropyLoss ya incluye Softmax
-            
+            loss = criterion(outputs, labels.long())  # CrossEntropyLoss ya incluye Softmax
+
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -66,7 +66,7 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
             for features, labels, text_len in val_dataloader:
                 features, labels = features.to(device), labels.to(device).long()
                 outputs = model(features, text_len)
-                loss = criterion(outputs, labels)
+                loss = criterion(outputs, labels.long())
                 val_loss += loss.item()
         
         # Registro en TensorBoard
