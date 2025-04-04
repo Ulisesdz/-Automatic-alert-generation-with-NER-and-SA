@@ -15,24 +15,41 @@ CONTRACTIONS = {
     "i'd": "i would", "you'd": "you would", "he'd": "he would", "she'd": "she would", 
     "we'd": "we would", "they'd": "they would", "i'll": "i will", "you'll": "you will",
     "he'll": "he will", "she'll": "she will", "we'll": "we will", "they'll": "they will",
-    "i've": "i have", "you've": "you have", "we've": "we have", "they've": "they have"
+    "i've": "i have", "you've": "you have", "we've": "we have", "they've": "they have", 
+    "didn't": "did not", "ain't": "is not", "u": "you", "pls": "please", "cuz": "because",
+    "dunno": "do not know", "gonna": "going to", "wanna": "want to", "gotta": "got to",
+    "idk": "i do not know", "omg": "oh my god", "lmk": "let me know", "brb": "be right back",
+    "btw": "by the way", "tbh": "to be honest", "imo": "in my opinion", "imho": "in my humble opinion",
+    "bff": "best friend forever", "bf": "boyfriend", "gf": "girlfriend", "smh": "shaking my head",
+    "lol": "laughing out loud", "rofl": "rolling on the floor laughing", "missin'": "missing"
 }
+
 
 # Diccionario de emociones clasificadas
 EMOTION_CATEGORIES = {
-    "yawn": "BAD_EMOTION", "sad": "BAD_EMOTION", "cry": "BAD_EMOTION",
-    "angry": "BAD_EMOTION", "frustrated": "BAD_EMOTION", "annoyed": "BAD_EMOTION",
-    "jealous": "BAD_EMOTION", "mad": "BAD_EMOTION", "upset": "BAD_EMOTION",
-    "happy": "GOOD_EMOTION", "excited": "GOOD_EMOTION", "love": "GOOD_EMOTION",
-    "joy": "GOOD_EMOTION", "smile": "GOOD_EMOTION", "laugh": "GOOD_EMOTION",
-    "grateful": "GOOD_EMOTION", "satisfied": "GOOD_EMOTION", "relieved": "GOOD_EMOTION",
-    "hug": "GOOD_EMOTION", "kiss": "GOOD_EMOTION", "swoon": "GOOD_EMOTION",
+    "yawn": "bad emotion", "sad": "bad emotion", "cry": "bad emotion",
+    "angry": "bad emotion", "frustrated": "bad emotion", "annoyed": "bad emotion",
+    "jealous": "bad emotion", "mad": "bad emotion", "upset": "bad emotion",
+    "happy": "good emotion", "excited": "good emotion", "love": "good emotion",
+    "joy": "good emotion", "smile": "good emotion", "laugh": "good emotion",
+    "grateful": "good emotion", "satisfied": "good emotion", "relieved": "good emotion",
+    "hug": "good emotion", "kiss": "good emotion", "swoon": "good emotion",
 }
 
 def expand_contractions(text: str) -> str:
-    """Expande contracciones comunes en inglés."""
+    """Expande contracciones comunes en inglés y casos tipo 'sun's' → 'sun is'."""
     words = text.split()
-    expanded_words = [CONTRACTIONS[word] if word in CONTRACTIONS else word for word in words]
+    expanded_words = []
+
+    for word in words:
+        if word in CONTRACTIONS:
+            expanded_words.append(CONTRACTIONS[word])
+        elif re.match(r"\w+'s$", word):  # Detecta 's al final, como en sun's
+            base = word[:-2]
+            expanded_words.extend([base, "is"])
+        else:
+            expanded_words.append(word)
+
     return " ".join(expanded_words)
 
 def normalize_repeated_chars(word: str) -> str:
@@ -46,7 +63,7 @@ def replace_emotions(text: str) -> str:
     """
     def emotion_replacer(match):
         emotion = match.group(1).lower()  # Convertir a minúsculas
-        category = EMOTION_CATEGORIES.get(emotion, "EMOTION")
+        category = EMOTION_CATEGORIES.get(emotion, "emotion")
         return f"<{category}>"
 
     return re.sub(r"\*\*(.*?)\*\*", emotion_replacer, text)
@@ -61,7 +78,7 @@ def clean_text(text: str) -> str:
     """
     text = re.sub(r"[,.\"…]", "", text)  # Eliminar caracteres innecesarios
     text = re.sub(r"([!?])", r" \1 ", text)  # Separar ! y ?
-    text = re.sub(r"[\U00010000-\U0010ffff]", "<EMOJI>", text)  # Reemplazar emojis con <EMOJI>
+    text = re.sub(r"[\U00010000-\U0010ffff]", "emoji", text)  # Reemplazar emojis con <EMOJI>
     text = re.sub(r"\s+", " ", text).strip()  # Limpiar espacios extra
     return text
 
@@ -78,9 +95,9 @@ def tokenize_tweet(tweet: str) -> List[str]:
     - Aplica limpieza de caracteres raros y tokeniza signos de puntuación clave.
     """
     tweet = tweet.lower()  # Convertir a minúsculas
-    tweet = re.sub(r"@\w+", "<USER>", tweet)  # Reemplazar menciones de usuario
-    tweet = re.sub(r"http\S+|www\S+", "<URL>", tweet)  # Reemplazar URLs
-    tweet = re.sub(r"[#]\w+", "<HASHTAG>", tweet)  # Reemplazar hashtags
+    tweet = re.sub(r"@\w+", "user", tweet)  # Reemplazar menciones de usuario
+    tweet = re.sub(r"http\S+|www\S+", "url", tweet)  # Reemplazar URLs
+    tweet = re.sub(r"[#]\w+", "hashtag", tweet)  # Reemplazar hashtags
 
     tweet = expand_contractions(tweet)  # Expandir contracciones
     tweet = replace_emotions(tweet)  # Reemplazar emociones entre **
