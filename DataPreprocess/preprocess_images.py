@@ -4,9 +4,9 @@ import random
 import pandas as pd
 
 # Configuración
-RAW_IMG_DIR = "raw_data/flickr30k/flickr30k_images/flickr30k_images"
-CAPTION_CSV = "raw_data/flickr30k/flickr30k_images/results.csv"
-OUTPUT_DIR = "data/IMAGES"
+RAW_IMG_DIR = "../raw_data/flickr30k/flickr30k_images/flickr30k_images"
+CAPTION_CSV = "../raw_data/flickr30k/flickr30k_images/results.csv"
+OUTPUT_DIR = "../data/IMAGES"
 SPLITS = ["train", "val", "test"]
 SPLIT_RATIO = [0.8, 0.1, 0.1]
 random.seed(42)

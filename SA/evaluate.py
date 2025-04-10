@@ -7,7 +7,7 @@ from utils import calculate_accuracy_SA
 from SA import load_word2vec, Sentiment140Dataset, CollateFn
 
 # -------- Configuración --------
-model_path = "saved_models/model2.pth"
+model_path = "saved_models/model.pth"
 test_csv = "../data/SA/test/sentiment140_test.csv"
 word2vec_path = "models/word2vec-google-news-300.kv"
 dataset_fraction = 0.1
