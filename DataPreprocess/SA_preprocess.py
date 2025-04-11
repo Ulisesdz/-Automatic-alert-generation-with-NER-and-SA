@@ -122,7 +122,7 @@ def process_sentiment140():
     df = pd.read_csv(file_path, encoding="latin1", header=None, names=["target", "ids", "date", "flag", "user", "text"])
 
     # Convertir etiquetas de sentimiento a texto
-    df["target"] = df["target"].replace({0: 0, 4: 1})
+    df["target"] = df["target"].replace({0: 0, 4: 2})
 
     # Aplicar tokenización y limpieza
     df["text"] = df["text"].apply(lambda x: " ".join(tokenize_tweet(x)))

@@ -1,9 +1,16 @@
+import os
 import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from typing import Dict, Tuple
-import os
+from gensim.models import KeyedVectors
+
+# funciones y clases propias
+from LSTM import RNN
+
+# -------- Configuración --------
+second_threshold = (0.45, 0.55)
 
 def save_model(model: torch.nn.Module, optimizer: optim.Optimizer, epoch: int, model_path: str = "saved_models/best_model.pth"):
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
@@ -13,7 +20,56 @@ def save_model(model: torch.nn.Module, optimizer: optim.Optimizer, epoch: int, m
         'optimizer_state_dict': optimizer.state_dict()
     }, model_path)
 
+def load_model(model_path: str, embedding_weights, device: str = "cpu"):
+    model = RNN(
+        embedding_weights=embedding_weights,
+        hidden_dim=128,
+        num_layers=3,
+        bidirectional=True,
+        dropout_p=0.3,
+        output_dim=1
+    ).to(device)
+
+    checkpoint = torch.load(model_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    print(f"Modelo cargado desde {model_path}")
+    return model
+
+def load_word2vec(local_path: str ="models/word2vec-google-news-300.kv"):
+    """
+    Carga el modelo Word2Vec preentrenado desde un archivo local si existe,
+    o lo descarga desde Gensim en caso contrario.
+    """
+    if os.path.exists(local_path):
+        print("Cargando modelo Word2Vec desde archivo local...")
+        return KeyedVectors.load(local_path)
+    else:
+        print("Descargando modelo Word2Vec...")
+        model = api.load("word2vec-google-news-300")
+        # Crear la carpeta "models/" si no existe
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        model.save(local_path)
+        return model
+
 def calculate_accuracy_SA(model: torch.nn.Module, dataloader: DataLoader, device: str = 'cpu') -> float:
+    model.to(device)
+    model.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for texts, labels, lengths in dataloader:
+            texts, labels = texts.to(device), labels.to(device).float()
+
+            outputs = model(texts, lengths)  # [batch_size, 1]
+            probs = torch.sigmoid(outputs).squeeze()  # [batch_size]
+
+            # Convertimos las probabilidades en clases 0 o 2
+            preds = torch.where(probs >= 0.5, torch.tensor(2.0, device=device), torch.tensor(0.0, device=device))
+            
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+    return correct / total if total > 0 else 0.0
+
+def calculate_accuracy_SA_multiclass(model: torch.nn.Module, dataloader: DataLoader, device: str = 'cpu') -> float:
     model.to(device)
     model.eval()
     correct, total = 0, 0
@@ -22,13 +78,24 @@ def calculate_accuracy_SA(model: torch.nn.Module, dataloader: DataLoader, device
             texts, labels = texts.to(device), labels.to(device).float()
             outputs = model(texts, lengths)  # [batch_size, 1]
 
-            # Convertir logits a probabilidad y luego a predicción binaria
-            probs = torch.sigmoid(outputs)
-            preds = (probs >= 0.5).float().squeeze()  # [batch]
-            
+            # Convertir logits a probabilidad
+            probs = torch.sigmoid(outputs).squeeze()  # [batch]
+
+            # Asignar clase según el umbral:
+            # < 0.4 -> 0 (negativo), 0.4-0.6 -> 1 (neutral), > 0.6 -> 2 (positivo)
+            preds = torch.where(
+                probs < second_threshold[0], torch.tensor(0, device=device),
+                torch.where(probs > second_threshold[1], torch.tensor(2, device=device),
+                torch.tensor(1, device=device)))
+
+            # Asegurarse de que las etiquetas también están en el mismo formato (0, 1, 2)
+            labels = labels.long()
+
             correct += (preds == labels).sum().item()
             total += labels.size(0)
+    
     return correct / total if total > 0 else 0.0
+
 
 def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
                               val_dataloader: DataLoader, criterion: torch.nn.Module,
@@ -48,13 +115,15 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
 
         for features, labels, text_len in train_dataloader:
             features, labels = features.to(device), labels.to(device).float()  # BCE necesita float
-            optimizer.zero_grad()
+            
+            # Normalizamos las etiquetas: 2.0 → 1.0 SOLO para el cálculo del loss
+            labels_for_loss = torch.where(labels == 2.0, torch.tensor(1.0, device=device), labels)
 
-            outputs = model(features, text_len).squeeze(1)  # [batch_size]
-            loss = criterion(outputs, labels)
+            optimizer.zero_grad()
+            outputs = model(features, text_len).squeeze(1)
+            loss = criterion(outputs, labels_for_loss)  # usamos labels "normalizadas"
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
 
         # Evaluación
         model.eval()
@@ -63,7 +132,8 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
             for features, labels, text_len in val_dataloader:
                 features, labels = features.to(device), labels.to(device).float()
                 outputs = model(features, text_len).squeeze(1)
-                loss = criterion(outputs, labels)
+                labels_for_loss = torch.where(labels == 2.0, torch.tensor(1.0, device=device), labels)
+                loss = criterion(outputs, labels_for_loss)
                 val_loss += loss.item()
 
         # TensorBoard
