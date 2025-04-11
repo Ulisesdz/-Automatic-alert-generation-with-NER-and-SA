@@ -3,10 +3,10 @@ __pycache__/
 data/
 raw_data/
 models/
-saved_models/
 runs/
 *.py[cod]
 *$py.class
+*.pth
 
 # C extensions
 *.so
