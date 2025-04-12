@@ -78,7 +78,6 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 │   ├── ner_labeling.py                  # Compare Final model with Pretrained
 │   └── ner_labeling_neutral.py          # Compare Final model with Pretrained
 
-
 ## How to Run the Project
 
 ### Clone the Repository
