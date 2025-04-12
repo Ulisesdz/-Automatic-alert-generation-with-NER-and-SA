@@ -40,6 +40,7 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 ├── AG/
 
 │   ├── AlertGeneration_model.ipynb      # Alert generation pipeline
+
 │   └── predictions_test.csv             # Output example
 
 ├── Bibliography/                        # References and research materials
