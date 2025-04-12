@@ -31,11 +31,12 @@ Given a **textual input** (e.g., from an article or tweet) and a related **image
 5. **Alert Generation**  
    The final step takes the entities, sentiment, and text as input and generates a concise one-sentence alert using a language generation model.
 
+---
 
 ## Repository Structure
 
+```bash
 Automatic-Alert-Generation-WITH-NER-AND-SA/
-
 
 ├── AG/
 │   ├── AlertGeneration_model.ipynb      # Alert generation pipeline 
@@ -50,31 +51,21 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 │   └── SA+NER/                          # Joint outputs
 
 ├── DataPreprocess/                      # Data preprocessing scripts
-│
 │   ├── download_datasets.py
-│
 │   ├── load_ner_dataset.py
-│
 │   ├── preprocess_images.py
-│
 │   ├── SA_preprocess.py
-│
 │   └── sentiment_classifier.py
 
-├── Documentation/                      # Reports
+├── Documentation/                       # Reports
 
 ├── image_captions/
-│
 │   ├── captions_output.csv              # Generated captions
-│
 │   └── run_blip_captioning.py           # Script to run BLIP model
 
 ├── raw_data/                            # Raw datasets
-│
 │   ├── conll2003/
-│
 │   ├── flickr30k/
-│
 │   └── sentiment140/
 
 ├── SA/                                  # Sentiment analysis modules
@@ -86,6 +77,7 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 │   ├── LSTM.py                          
 │   ├── ner_labeling.py                  # Compare Final model with Pretrained
 │   └── ner_labeling_neutral.py          # Compare Final model with Pretrained
+
 
 ## How to Run the Project
 
