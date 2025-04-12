@@ -38,21 +38,15 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 
 
 ├── AG/
-
-│   ├── AlertGeneration_model.ipynb      # Alert generation pipeline
-│
-│   └── predictions_test.csv             # Output example
+│   ├── AlertGeneration_model.ipynb      # Alert generation pipeline 
+│   └── predictions_test.csv             # Output example 
 
 ├── Bibliography/                        # References and research materials
 
-├── data/                                # Preprocessed input data
-│
-│   ├── IMAGES/                          # Image inputs
-│
-│   ├── NER/                             # NER output samples
-│
-│   ├── SA/                              # Sentiment output samples
-│
+├── data/                                # Preprocessed input data 
+│   ├── IMAGES/                          # Image inputs 
+│   ├── NER/                             # NER output samples 
+│   ├── SA/                              # Sentiment output samples 
 │   └── SA+NER/                          # Joint outputs
 
 ├── DataPreprocess/                      # Data preprocessing scripts
