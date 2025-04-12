@@ -35,37 +35,39 @@ Given a **textual input** (e.g., from an article or tweet) and a related **image
 ## Repository Structure
 
 Automatic-Alert-Generation-WITH-NER-AND-SA/
-│
+
+
 ├── AG/
+
 │   ├── AlertGeneration_model.ipynb      # Alert generation pipeline
 │   └── predictions_test.csv             # Output example
-│
+
 ├── Bibliography/                        # References and research materials
-│
+
 ├── data/                                # Preprocessed input data
 │   ├── IMAGES/                          # Image inputs
 │   ├── NER/                             # NER output samples
 │   ├── SA/                              # Sentiment output samples
 │   └── SA+NER/                          # Joint outputs
-│
+
 ├── DataPreprocess/                      # Data preprocessing scripts
 │   ├── download_datasets.py
 │   ├── load_ner_dataset.py
 │   ├── preprocess_images.py
 │   ├── SA_preprocess.py
 │   └── sentiment_classifier.py
-│
+
 ├── Documentation/                      # Reports
-│
+
 ├── image_captions/
 │   ├── captions_output.csv              # Generated captions
 │   └── run_blip_captioning.py           # Script to run BLIP model
-│
+
 ├── raw_data/                            # Raw datasets
 │   ├── conll2003/
 │   ├── flickr30k/
 │   └── sentiment140/
-│
+
 ├── SA/                                  # Sentiment analysis modules
 │   ├── models/                          # Word2Vec
 │   ├── SA+NER/                          # Results Compare Final model with Pretrained
