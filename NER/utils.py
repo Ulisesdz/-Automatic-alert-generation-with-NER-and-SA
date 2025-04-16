@@ -1,13 +1,33 @@
 import torch
 from torch.utils.data import DataLoader
-from typing import Dict
+from typing import Dict, Tuple
 import os
 from torch.jit import RecursiveScriptModule
 import numpy as np
 from collections import Counter
+from sklearn.utils.class_weight import compute_class_weight
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+from gensim.models import KeyedVectors
+import gensim.downloader as api
+
+
+def load_word2vec(local_path="models/word2vec-google-news-300.kv"):
+    """
+    Carga el modelo Word2Vec preentrenado desde un archivo local si existe,
+    o lo descarga desde Gensim en caso contrario.
+    """
+    if os.path.exists(local_path):
+        print("Cargando modelo Word2Vec desde archivo local...")
+        return KeyedVectors.load(local_path)
+    else:
+        print("Descargando modelo Word2Vec...")
+        model = api.load("word2vec-google-news-300")
+        # Crear la carpeta "models/" si no existe
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        model.save(local_path)
+        return model
 
 def calculate_confusion_matrix_NER(model: torch.nn.Module, dataloader: DataLoader, tag2idx, device: str = 'cpu') -> None:
     """
@@ -29,7 +49,7 @@ def calculate_confusion_matrix_NER(model: torch.nn.Module, dataloader: DataLoade
     with torch.no_grad():
         for sentences, tags, lengths in dataloader:
             sentences, tags = sentences.to(device), tags.to(device)
-            logits = model(sentences)  # [batch_size, seq_len, tagset_size]
+            logits = model(sentences, lengths)  # [batch_size, seq_len, tagset_size]
             predicted_tags = torch.argmax(logits, dim=-1)  # [batch_size, seq_len]
 
             for i in range(len(lengths)):
@@ -54,37 +74,35 @@ def calculate_confusion_matrix_NER(model: torch.nn.Module, dataloader: DataLoade
 
 
 # Función para calcular los pesos de clase (pesos inversos)
-def calculate_class_weights(tag2idx, dataset):
-    # Contamos las apariciones de cada etiqueta
-    label_counts = Counter()
+def calculate_class_weights_sklearn(tag2idx, dataset):
+    all_tags = []
 
-    for _, tags in dataset:
-        label_counts.update(tags.cpu().numpy())
-    
-    # Total de etiquetas y número de clases
-    total_labels = sum(label_counts.values())
-    num_classes = len(tag2idx)
+    for tags in dataset.ner_tags:
+        all_tags.extend(tags)
 
-    label_counts_dict = dict(label_counts)
-    print(label_counts_dict)
+    # Eliminar las etiquetas de padding (-1)
+    all_tags = [tag for tag in all_tags if tag != -1]
 
-    # Devolvemos los pesos inversos en el orden del tag2idx
-    weights = []
-    for tag in tag2idx.keys():
-        print(tag)
-        if tag == "<PAD>":
-            count = label_counts_dict.get(8, 0)  # Aseguramos que PAD tenga valor 0 si no está presente
-        else:
-            count = label_counts_dict.get(int(tag), 0)  # Accedemos a las claves como enteros
+    classes = list(tag2idx.values())
+    classes = [c for c in classes if c != -1]  # quitamos el índice del padding
 
-        # Calculamos los pesos inversos: 1 / frecuencia
-        weight = total_labels / (count * num_classes)  # Se añade un pequeño valor para evitar división por 0
-        print(f"Etiqueta: {tag}, Frecuencia: {count}, Peso inverso: {weight}")
+    # Calcular los pesos
+    class_weights = compute_class_weight(class_weight='balanced', classes=classes, y=all_tags)
 
-        weights.append(weight)
-    weights[9] = 0.0
-    print(weights)
-    return torch.tensor(weights, dtype=torch.float)
+    # Crear un tensor de pesos donde el índice corresponde a cada clase
+    weight_tensor = torch.zeros(len(tag2idx), dtype=torch.float)
+
+    for i, cls in enumerate(classes):
+        weight_tensor[cls] = class_weights[i]
+
+    # Asegúrate de que el índice de padding tenga peso 0
+    if -1 in tag2idx.values():
+        pad_idx = [k for k, v in tag2idx.items() if v == -1][0]
+        weight_tensor[tag2idx[pad_idx]] = 0.0
+
+    return weight_tensor
+
+
 
 
 
@@ -92,7 +110,7 @@ from collections import defaultdict
 
 def calculate_accuracy_per_tag(model: torch.nn.Module, dataloader: DataLoader, tag2idx, device: str = 'cpu') -> dict:
     """
-    Calculate precision, recall, F1 and accuracy per tag for Named Entity Recognition (NER).
+    Calculate accuracy per tag for Named Entity Recognition (NER).
     
     Args:
         model (torch.nn.Module): PyTorch model.
@@ -101,23 +119,20 @@ def calculate_accuracy_per_tag(model: torch.nn.Module, dataloader: DataLoader, t
         device (str): Device ('cpu' or 'cuda').
         
     Returns:
-        dict: A dictionary with precision, recall, f1, accuracy, and support per tag.
+        dict: A dictionary with accuracy per tag.
     """
     model.to(device)
     model.eval()
 
     idx2tag = {v: k for k, v in tag2idx.items()}
 
-    true_positives = defaultdict(int)
-    false_positives = defaultdict(int)
-    false_negatives = defaultdict(int)
     total = defaultdict(int)
     correct = defaultdict(int)
 
     with torch.no_grad():
         for sentences, tags, lengths in dataloader:
             sentences, tags = sentences.to(device), tags.to(device)
-            logits = model(sentences)
+            logits = model(sentences, lengths)
             predicted_tags = torch.argmax(logits, dim=-1)
 
             for i in range(len(lengths)):
@@ -134,34 +149,17 @@ def calculate_accuracy_per_tag(model: torch.nn.Module, dataloader: DataLoader, t
                     total[true_tag_name] += 1
                     if pred_tag == true_tag:
                         correct[true_tag_name] += 1
-                        true_positives[true_tag_name] += 1
-                    else:
-                        false_positives[pred_tag_name] += 1
-                        false_negatives[true_tag_name] += 1
 
-    metrics = {}
+    accuracy_per_tag = {}
     for tag in total:
-        tp = true_positives[tag]
-        fp = false_positives[tag]
-        fn = false_negatives[tag]
         acc = correct[tag] / total[tag] if total[tag] > 0 else 0.0
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-
-        metrics[tag] = {
-            "correct": correct[tag],
-            "total": total[tag],
+        accuracy_per_tag[tag] = {
             "accuracy": acc,
-            "precision": precision,
-            "recall": recall,
-            "f1": f1
+            "correct": correct[tag],
+            "total": total[tag]
         }
 
-    return metrics
-
-
-
+    return accuracy_per_tag
 
 
 def calculate_accuracy_NER(model: torch.nn.Module, dataloader: DataLoader, device: str = 'cpu') -> float:
@@ -185,7 +183,7 @@ def calculate_accuracy_NER(model: torch.nn.Module, dataloader: DataLoader, devic
     with torch.no_grad():
         for sentences, tags, lengths in dataloader:
             sentences, tags = sentences.to(device), tags.to(device)
-            logits = model(sentences)  # [batch_size, seq_len, tagset_size]
+            logits = model(sentences, lengths)  # [batch_size, seq_len, tagset_size]
             predicted_tags = torch.argmax(logits, dim=-1)  # [batch_size, seq_len]
 
             mask = torch.zeros_like(tags).bool()
@@ -228,15 +226,16 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
     model.to(device)
     
     for epoch in range(epochs):
+        print(f"Epoch: {epoch+1}")
         model.train()
         total_loss = 0.0
         for sentences, tags, lengths in train_dataloader:
             sentences, tags = sentences.to(device), tags.to(device)
             optimizer.zero_grad()
-            outputs = model(sentences)  # [batch_size, seq_len, tagset_size]
+            
+            outputs = model(sentences, lengths)  # [B, T, C]
 
-            # Flatten for loss calculation: ignore padding with view
-            loss = criterion(outputs.view(-1, outputs.shape[-1]), tags.view(-1))
+            loss = criterion(outputs.reshape(-1, outputs.shape[-1]), tags.reshape(-1))  # Flatten both
             loss.backward()
             optimizer.step()
             
@@ -248,8 +247,8 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
         with torch.no_grad():
             for sentences, tags, lengths in val_dataloader:
                 sentences, tags = sentences.to(device), tags.to(device)
-                outputs = model(sentences)
-                loss = criterion(outputs.view(-1, outputs.shape[-1]), tags.view(-1))
+                outputs = model(sentences, lengths)
+                loss = criterion(outputs.reshape(-1, outputs.shape[-1]), tags.reshape(-1))
                 val_loss += loss.item()
 
         # Logging
@@ -266,13 +265,14 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            save_model(model, "bilstm_model.pth")  # Changed file name to reflect model
+            save_model(model, f"bilstm_model.pth")  # Changed file name to reflect model
         else:
             epochs_no_improve += 1
+            patience_left = patience - epochs_no_improve
+            print(f"Validation loss did not improve. Patience left: {patience_left}")
             if epochs_no_improve >= patience:
                 print("Early stopping.")
                 break
-        print(epoch)
         
     return train_accuracies, val_accuracies
 
@@ -282,3 +282,27 @@ def save_model(model: torch.nn.Module, name: str) -> None:
     if not os.path.isdir("models"):
         os.makedirs("models")
     torch.save(model.state_dict(), f"models/{name}")  # NO .pt extra
+
+
+def evaluate(rnn_model, train_dataloader, val_dataloader, test_dataloader, device, full_train_dataset):
+    # Final evaluation on train, validation, and test datasets
+    train_acc = calculate_accuracy_NER(rnn_model, train_dataloader, device=device)
+    val_acc = calculate_accuracy_NER(rnn_model, val_dataloader, device=device)
+    test_acc = calculate_accuracy_NER(rnn_model, test_dataloader, device=device)
+
+    # Print results
+    print(f"\n🔹 NER Model - Training Accuracy: {train_acc:.4f}")
+    print(f"🔹 NER Model - Validation Accuracy: {val_acc:.4f}")
+    print(f"🔹 NER Model - Test Accuracy: {test_acc:.4f}")
+
+    tag_accuracy = calculate_accuracy_per_tag(rnn_model, test_dataloader, full_train_dataset.tag2idx, device)
+
+    print("\n🔍 Accuracy por etiqueta (NER):")
+    for tag in sorted(tag_accuracy.keys(), key=lambda t: full_train_dataset.tag2idx[t]):
+        info = tag_accuracy[tag]
+        print(f"{str(full_train_dataset.tag2idx[tag]):8s} → {info['accuracy']:.4f}  (Correctas: {info['correct']}, Totales: {info['total']})")
+
+
+    # Después de entrenar el modelo y realizar la evaluación
+    calculate_confusion_matrix_NER(rnn_model, test_dataloader, full_train_dataset.tag2idx, device=device)
+
