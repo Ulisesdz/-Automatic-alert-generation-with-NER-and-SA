@@ -7,7 +7,8 @@ from typing import Dict, Tuple
 from gensim.models import KeyedVectors
 
 # funciones y clases propias
-from LSTM import RNN
+from SA.LSTM import RNN
+
 
 # -------- Configuración --------
 second_threshold = (0.45, 0.55)
