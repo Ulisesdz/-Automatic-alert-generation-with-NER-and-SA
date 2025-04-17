@@ -54,18 +54,19 @@ def process_dataset(input_path, output_path):
     print(f"Guardado en: {output_path}\n")
 
 # Paths de entrada y salida
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 datasets = {
     "train": {
-        "input": Path("../data/NER/train/conll2003_train.csv"),
-        "output": Path("../data/SA+NER/train/conll2003_train_SA_neutral.csv"),
+        "input": Path(BASE_DIR) / "../data" / "NER" / "train" / "conll2003_train.csv",
+        "output": Path(BASE_DIR) / "../data" / "SA+NER" / "train" / "conll2003_train_SA_neutral.csv",
     },
     "validation": {
-        "input": Path("../data/NER/train/conll2003_validation.csv"),
-        "output": Path("../data/SA+NER/train/conll2003_validation_SA_neutral.csv"),
+        "input": Path(BASE_DIR) / "../data" / "NER" / "train" / "conll2003_validation.csv",
+        "output": Path(BASE_DIR) / "../data" / "SA+NER" / "train" / "conll2003_validation_SA_neutral.csv",
     },
     "test": {
-        "input": Path("../data/NER/test/conll2003_test.csv"),
-        "output": Path("../data/SA+NER/test/conll2003_test_SA_neutral.csv"),
+        "input": Path(BASE_DIR) / "../data" / "NER" / "test" / "conll2003_test.csv",
+        "output": Path(BASE_DIR) / "../data" / "SA+NER" / "test" / "conll2003_test_SA_neutral.csv",
     },
 }
 
@@ -73,8 +74,8 @@ datasets = {
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
 
-    result_path = "../data/SA+NER"
-    os.makedirs(os.path.dirname(result_path), exist_ok=True)
+    result_path = Path(BASE_DIR) / "../data" / "SA+NER"
+    os.makedirs(result_path, exist_ok=True)
     
     for name, paths in datasets.items():
         process_dataset(paths["input"], paths["output"])

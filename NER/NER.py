@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.utils.data import DataLoader, random_split
 from LSTM import BiLSTM  # Assuming your LSTM model is in LSTM.py
@@ -18,17 +19,15 @@ bidirectional: bool = True
 embedding_dim = 300
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-train_csv = "../data/NER/train/conll2003_train.csv"
-test_csv = "../data/NER/test/conll2003_test.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+train_csv = os.path.join(BASE_DIR, "../data/NER/train/conll2003_train.csv")
+test_csv = os.path.join(BASE_DIR, "../data/NER/test/conll2003_test.csv")
+word2vec_path = os.path.join(BASE_DIR, "models/word2vec-google-news-300.kv")
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Load datasets
-    train_csv = "../data/NER/train/conll2003_train.csv"
-    test_csv = "../data/NER/test/conll2003_test.csv"
-
-    word2vec_model = load_word2vec()
+    word2vec_model = load_word2vec(word2vec_path)
     embedding_weights = torch.tensor(word2vec_model.vectors, dtype=torch.float32)
     print('embedding check')
 
@@ -66,6 +65,7 @@ if __name__ == "__main__":
     weights = calculate_class_weights_sklearn(full_train_dataset.tag2idx,full_train_dataset)
 
     # Crear el modelo con los embeddings preentrenados
+    print(len(full_train_dataset.tag2idx),)
     rnn_model = BiLSTM(
             embedding_dim=embedding_dim,
             tagset_size=len(full_train_dataset.tag2idx), # o el tamaño real de tu conjunto de etiquetas

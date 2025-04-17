@@ -90,11 +90,11 @@ class Conll2003Dataset(Dataset):
             int: Índice correspondiente al sentimiento.
         """
         if sentiment == 'positive':
-            return 1
+            return 2
         elif sentiment == 'negative':
             return 0
         elif sentiment == 'neutral':
-            return 2
+            return 1
         else:
             raise ValueError(f"Sentimiento desconocido: {sentiment}")
 

@@ -108,18 +108,21 @@ def tokenize_tweet(tweet: str) -> List[str]:
 
     return tokens
 
+
 def process_sentiment140():
-    file_path = "../raw_data/sentiment140/training.1600000.processed.noemoticon.csv"
-    if not os.path.exists(file_path):
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    raw_data_path = os.path.join(BASE_DIR, "../raw_data", "sentiment140", "training.1600000.processed.noemoticon.csv")
+    
+    if not os.path.exists(raw_data_path):
         print("Sentiment140 dataset not found.")
         return
 
     # Crear carpetas de salida si no existen
-    os.makedirs("../data/SA/train", exist_ok=True)
-    os.makedirs("../data/SA/test", exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, "../data", "SA", "train"), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, "../data", "SA", "test"), exist_ok=True)
 
     # Cargar dataset
-    df = pd.read_csv(file_path, encoding="latin1", header=None, names=["target", "ids", "date", "flag", "user", "text"])
+    df = pd.read_csv(raw_data_path, encoding="latin1", header=None, names=["target", "ids", "date", "flag", "user", "text"])
 
     # Convertir etiquetas de sentimiento a texto
     df["target"] = df["target"].replace({0: 0, 4: 2})
@@ -132,8 +135,8 @@ def process_sentiment140():
     test_df = df.drop(train_df.index)
 
     # Guardar en archivos CSV
-    train_df.to_csv("../data/SA/train/sentiment140_train.csv", index=False)
-    test_df.to_csv("../data/SA/test/sentiment140_test.csv", index=False)
+    train_df.to_csv(os.path.join(BASE_DIR, "../data", "SA", "train", "sentiment140_train.csv"), index=False)
+    test_df.to_csv(os.path.join(BASE_DIR, "../data", "SA", "test", "sentiment140_test.csv"), index=False)
 
     print("Processed Sentiment140 and saved train/test splits.")
 

@@ -1,30 +1,32 @@
 import torch
 from torch.utils.data import DataLoader
-from typing import Dict, Tuple
+from typing import Dict
 import os
-from torch.jit import RecursiveScriptModule
-import numpy as np
-from collections import Counter
 from sklearn.utils.class_weight import compute_class_weight
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 from gensim.models import KeyedVectors
 import gensim.downloader as api
+from collections import defaultdict
+from LSTM import BiLSTM
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def load_word2vec(local_path="models/word2vec-google-news-300.kv"):
+def load_word2vec(local_path=None):
     """
     Carga el modelo Word2Vec preentrenado desde un archivo local si existe,
     o lo descarga desde Gensim en caso contrario.
     """
+    if local_path is None:
+        local_path = os.path.join(BASE_DIR, "models", "word2vec-google-news-300.kv")
+
     if os.path.exists(local_path):
         print("Cargando modelo Word2Vec desde archivo local...")
         return KeyedVectors.load(local_path)
     else:
         print("Descargando modelo Word2Vec...")
         model = api.load("word2vec-google-news-300")
-        # Crear la carpeta "models/" si no existe
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
         model.save(local_path)
         return model
@@ -102,11 +104,6 @@ def calculate_class_weights_sklearn(tag2idx, dataset):
 
     return weight_tensor
 
-
-
-
-
-from collections import defaultdict
 
 def calculate_accuracy_per_tag(model: torch.nn.Module, dataloader: DataLoader, tag2idx, device: str = 'cpu') -> dict:
     """
@@ -218,6 +215,7 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
     Returns:
         Dict[int, float]: Dictionary with training and validation accuracies.
     """
+    
     train_accuracies = {}
     val_accuracies = {}
     best_val_loss = float('inf')
@@ -265,7 +263,7 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            save_model(model, f"bilstm_model.pth")  # Changed file name to reflect model
+            save_model(model, optimizer, epoch, f"model_NER.pth")  # Guarda el modelo si hay mejora en val_loss
         else:
             epochs_no_improve += 1
             patience_left = patience - epochs_no_improve
@@ -277,11 +275,34 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
     return train_accuracies, val_accuracies
 
 
+def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "saved_models/model_NER.pth"):
+    models_path = os.path.join(BASE_DIR, "saved_models")
+    os.makedirs(models_path, exist_ok=True)
+    model_path = os.path.join(models_path, model_path)
+    
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, model_path)
 
-def save_model(model: torch.nn.Module, name: str) -> None:
-    if not os.path.isdir("models"):
-        os.makedirs("models")
-    torch.save(model.state_dict(), f"models/{name}")  # NO .pt extra
+def load_ner(model_path: str = "saved_models/model_NER.pth", embedding_weights=None, device: str = "cpu"):
+    model_path = os.path.join(BASE_DIR, model_path)
+
+    # Crear el modelo antes de cargar el checkpoint
+    model = BiLSTM(
+        embedding_dim=300,
+        tagset_size=10,
+        hidden_dim=128,
+        num_layers=3,
+        dropout_rate=0.5,
+        pretrained_embeddings=embedding_weights
+    ).to(device)
+
+    checkpoint = torch.load(model_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    print(f"Modelo NER cargado desde {model_path}")
+    return model
 
 
 def evaluate(rnn_model, train_dataloader, val_dataloader, test_dataloader, device, full_train_dataset):
@@ -291,13 +312,13 @@ def evaluate(rnn_model, train_dataloader, val_dataloader, test_dataloader, devic
     test_acc = calculate_accuracy_NER(rnn_model, test_dataloader, device=device)
 
     # Print results
-    print(f"\n🔹 NER Model - Training Accuracy: {train_acc:.4f}")
-    print(f"🔹 NER Model - Validation Accuracy: {val_acc:.4f}")
-    print(f"🔹 NER Model - Test Accuracy: {test_acc:.4f}")
+    print(f"\nNER Model - Training Accuracy: {train_acc:.4f}")
+    print(f"NER Model - Validation Accuracy: {val_acc:.4f}")
+    print(f"NER Model - Test Accuracy: {test_acc:.4f}")
 
     tag_accuracy = calculate_accuracy_per_tag(rnn_model, test_dataloader, full_train_dataset.tag2idx, device)
 
-    print("\n🔍 Accuracy por etiqueta (NER):")
+    print("\nAccuracy por etiqueta (NER):")
     for tag in sorted(tag_accuracy.keys(), key=lambda t: full_train_dataset.tag2idx[t]):
         info = tag_accuracy[tag]
         print(f"{str(full_train_dataset.tag2idx[tag]):8s} → {info['accuracy']:.4f}  (Correctas: {info['correct']}, Totales: {info['total']})")

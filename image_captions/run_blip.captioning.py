@@ -46,4 +46,4 @@ for fname in image_files:
 # ==== GUARDAR RESULTADOS ====
 df = pd.DataFrame(results)
 df.to_csv(OUTPUT_CSV, index=False)
-print(f"\n✅ Captions guardadas en: {OUTPUT_CSV}")
+print(f"\nCaptions guardadas en: {OUTPUT_CSV}")

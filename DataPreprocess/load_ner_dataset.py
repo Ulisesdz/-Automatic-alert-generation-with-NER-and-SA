@@ -4,14 +4,15 @@ import pandas as pd
 from datasets import Dataset, Features, Sequence, Value, ClassLabel
 
 # Ruta base
-base_path = "../raw_data/conll2003"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RAW_DATA_PATH = os.path.join(BASE_DIR, "../raw_data", "conll2003")
 
 # Splits a procesar
 splits = ["train", "test", "validation"]
 
 for split in splits:
-    split_path = os.path.join(base_path, split)
-    print(f"\n Procesando split: {split}")
+    split_path = os.path.join(RAW_DATA_PATH, split)
+    print(f"\nProcesando split: {split}")
 
     # Leer dataset_info.json
     info_path = os.path.join(split_path, "dataset_info.json")
@@ -51,14 +52,18 @@ for split in splits:
     for col in ["tokens", "pos_tags", "chunk_tags", "ner_tags"]:
         df[col] = df[col].apply(lambda x: str(x))
 
+    # Crear directorios si no existen
+    train_dir = os.path.join(BASE_DIR, "data", "NER", "train")
+    test_dir = os.path.join(BASE_DIR, "data", "NER", "test")
+    os.makedirs(train_dir, exist_ok=True)
+    os.makedirs(test_dir, exist_ok=True)
+
     # Guardar CSV en la misma carpeta
-    os.makedirs("../data/NER/train", exist_ok=True)
-    os.makedirs("../data/NER/test", exist_ok=True)
     if split == "test":
-        csv_output_path = f"../data/NER/test/conll2003_{split}.csv"
+        csv_output_path = os.path.join(test_dir, f"conll2003_{split}.csv")
         df.to_csv(csv_output_path, index=False)
     else:
-        csv_output_path = f"../data/NER/train/conll2003_{split}.csv"
+        csv_output_path = os.path.join(train_dir, f"conll2003_{split}.csv")
         df.to_csv(csv_output_path, index=False)
 
     print(f"CSV guardado: {csv_output_path}")

@@ -1,52 +1,11 @@
 import os
 import torch
 import pandas as pd
-import numpy as np
 
-from gensim.models import KeyedVectors
-from torch.nn.utils.rnn import pad_sequence
-from SA.utils import load_word2vec as load_w2v_sa, load_model as load_sa_model
+# Importación de funciones y clases
+from SA.utils import load_model as load_sa_model
 from NER.utils import load_word2vec as load_w2v_ner
-from SA.LSTM import RNN
-from NER.LSTM import BiLSTM
-
-
-# configuración de las rutas
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-w2v_path = "SA/models/word2vec-google-news-300.kv"
-caption_csv = "image_captions/captions_output.csv"
-output_folder = "ner_sa_output"
-output_csv = os.path.join(output_folder, "ner_sa_output.csv")
-os.makedirs(output_folder, exist_ok=True)
-
-# loading models
-print("Loading Word2Vec...")
-word2vec = load_w2v_ner(w2v_path)
-embedding_weights = torch.tensor(word2vec.vectors, dtype=torch.float32)
-
-print("Loading NER model...")
-ner_model = BiLSTM(
-    embedding_dim=300,
-    tagset_size=10,
-    hidden_dim=128,
-    num_layers=3,
-    dropout_rate=0.5,
-    pretrained_embeddings=embedding_weights
-).to(device)
-
-ner_model.load_state_dict(torch.load("saved_models/model_NER.pth"))
-ner_model.eval()
-
-print("Loadingo SA model...")
-sa_model = load_sa_model("saved_models/model_SA_neutral.pth", embedding_weights, device)
-sa_model.eval()
-
-# tags
-idx2tag = {0: "O", 1: "B-PER", 2: "I-PER", 3: "B-ORG", 4: "I-ORG", 5: "B-LOC", 6: "I-LOC", 7: "B-MISC", 8: "I-MISC", 9: "<PAD>"}
-thresholds = (0.45, 0.55)
-
-
+from NER.utils import load_ner as load_ner_model
 def preprocess(text):
     return text.strip().lower().split()
 
@@ -83,39 +42,71 @@ def predict_sentiment(text):
         else:
             return "neutral"
 
-        
+if __name__ == "__main__":
+    # Configuración de las rutas absolutas
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# === PROCESAR SOLO CAPTIONS (SIN IMÁGENES) ===
+    # Rutas absolutas
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-captions = [
-    "Two men in uniform standing in front of a crowd.",
-    "A woman in a red dress smiles at the camera.",
-    "The company Apple is planning a big event in New York.",
-    "A cat is sleeping on the sofa in a sunny room."
-]
+    w2v_path = os.path.join(BASE_DIR, "SA", "models", "word2vec-google-news-300.kv")
+    caption_csv = os.path.join(BASE_DIR, "image_captions", "captions_output.csv")
+    output_folder = os.path.join(BASE_DIR, "ner_sa_output")
+    output_csv = os.path.join(output_folder, "ner_sa_output.csv")
 
-resultados = []
+    # Crear la carpeta de salida si no existe
+    os.makedirs(output_folder, exist_ok=True)
 
-print("🔍 Procesando captions...\n")
+    # Cargar modelos
+    print("Loading Word2Vec...")
+    word2vec = load_w2v_ner(w2v_path)
+    embedding_weights = torch.tensor(word2vec.vectors, dtype=torch.float32)
 
-for caption in captions:
-    entidades = predict_entities(caption)
-    sentimiento = predict_sentiment(caption)
+    print("Loading SA model...")
+    sa_model = load_sa_model(os.path.join(BASE_DIR, "SA", "saved_models", "model_SAAtt_neutral.pth"), embedding_weights, device)
+    sa_model.eval()
 
-    print(f"📝 Caption: {caption}")
-    print(f"🔹 Entidades: {entidades}")
-    print(f"🔹 Sentimiento: {sentimiento}")
-    print("─" * 50)
+    print("Loading NER model...")
+    ner_model = load_ner_model(os.path.join(BASE_DIR, "NER", "saved_models", "model_NER.pth"), embedding_weights, device)
+    ner_model.eval()
 
-    resultados.append({
-        "caption": caption,
-        "entities": entidades,
-        "sentiment": sentimiento
-    })
+    # Definir las etiquetas y umbrales
+    idx2tag = {0: "O", 1: "B-PER", 2: "I-PER", 3: "B-ORG", 4: "I-ORG", 5: "B-LOC", 6: "I-LOC", 7: "B-MISC", 8: "I-MISC", 9: "<PAD>"}
+    thresholds = (0.45, 0.55)
 
-df_out = pd.DataFrame(resultados)
-df_out.to_csv(output_csv, index=False)
-print(f"\n Resultados guardados en: {output_csv}")
+
+    # === PROCESAR SOLO CAPTIONS (SIN IMÁGENES) ===
+
+    captions = [
+        "Two men in uniform standing in front of a crowd.",
+        "A woman in a red dress smiles at the camera.",
+        "The company Apple is planning a big event in New York.",
+        "A cat is sleeping on the sofa in a sunny room."
+    ]
+
+    resultados = []
+
+    print("Procesando captions...\n")
+
+    for caption in captions:
+        entidades = predict_entities(caption)
+        sentimiento = predict_sentiment(caption)
+
+        print(f"Caption: {caption}")
+        print(f"Entidades: {entidades}")
+        print(f"Sentimiento: {sentimiento}")
+        print("─" * 50)
+
+        resultados.append({
+            "caption": caption,
+            "entities": entidades,
+            "sentiment": sentimiento
+        })
+
+    df_out = pd.DataFrame(resultados)
+    df_out.to_csv(output_csv, index=False)
+    print(f"\nResultados guardados en: {output_csv}")
+
 
 
 # # === PROCESAR CAPTIONS ===
@@ -123,7 +114,7 @@ print(f"\n Resultados guardados en: {output_csv}")
 # df = pd.read_csv(caption_csv)
 # resultados = []
 
-# print("🔍 Procesando captions...")
+# print("Procesando captions...")
 
 # for _, row in df.iterrows():
 #     img = row["image_name"]
