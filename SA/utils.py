@@ -13,7 +13,7 @@ from SA.LSTM import RNN
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # -------- Configuración --------
-second_threshold = (0.45, 0.55)
+second_threshold = (0.35, 0.65)
 
 # HIPERPARÁMETROS
 batch_size: int = 64
@@ -28,20 +28,18 @@ bidirectional: bool = True
 dataset_fraction: float = 0.1
 weight_decay: float = 5e-4
 use_attention: bool = True
-hidden_fc: int = 64
 
-def save_model(model, optimizer, epoch, model_path: str = "saved_models/model_SA.pth"):
-    model_path = os.path.join(BASE_DIR, model_path)
+def save_model(model, optimizer, epoch, model_path: str = "model_SA_BiLSTMAtt.pth"):
+    model_path = os.path.join("saved_models", model_path)
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict()
     }, model_path)
-    
 
-def load_model(model_path: str = "saved_models/model_SA.pth", embedding_weights=None, device: str = "cpu"):
-    model_path = os.path.join(BASE_DIR, model_path)
+def load_model(model_path: str = "model_SA_BiLSTMAtt.pth", embedding_weights=None, device: str = "cpu"):
+    model_path = os.path.join("saved_models", model_path)
     model = RNN(
         embedding_weights=embedding_weights,
         hidden_dim=hidden_dim,
@@ -49,10 +47,8 @@ def load_model(model_path: str = "saved_models/model_SA.pth", embedding_weights=
         bidirectional=bidirectional,
         dropout_p=dropout_p,
         output_dim=1,
-        use_attention=use_attention,
-        hidden_fc=hidden_fc
+        use_attention=use_attention
     ).to(device)
-
 
     checkpoint = torch.load(model_path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])

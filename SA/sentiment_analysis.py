@@ -21,7 +21,6 @@ bidirectional: bool = True
 dataset_fraction: float = 0.1
 weight_decay: float = 5e-4
 use_attention: bool = True
-hidden_fc: int = 64
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -64,8 +63,7 @@ if __name__ == "__main__":
         bidirectional=bidirectional,
         dropout_p=dropout_p,
         output_dim=1,
-        use_attention=use_attention,
-        hidden_fc=hidden_fc
+        use_attention=use_attention
     ).to(device)
 
     # Loss, optimizer y scheduler

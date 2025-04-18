@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from gensim.models import KeyedVectors
 import gensim.downloader as api
 from collections import defaultdict
-from LSTM import BiLSTM
+from NER.LSTM import BiLSTM
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -275,10 +275,10 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
     return train_accuracies, val_accuracies
 
 
-def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "saved_models/model_NER.pth"):
+def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "model_NER.pth"):
     models_path = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(models_path, exist_ok=True)
-    model_path = os.path.join(models_path, model_path)
+    model_path = os.path.join("saved_models", model_path)
     
     torch.save({
         'epoch': epoch,
@@ -286,8 +286,8 @@ def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "save
         'optimizer_state_dict': optimizer.state_dict(),
     }, model_path)
 
-def load_ner(model_path: str = "saved_models/model_NER.pth", embedding_weights=None, device: str = "cpu"):
-    model_path = os.path.join(BASE_DIR, model_path)
+def load_ner(model_path: str = "model_NER.pth", embedding_weights=None, device: str = "cpu"):
+    model_path = os.path.join("saved_models", model_path)
 
     # Crear el modelo antes de cargar el checkpoint
     model = BiLSTM(

@@ -8,7 +8,6 @@ from LSTM import BiLSTM
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # -------- Configuración --------
-model_path = os.path.join(BASE_DIR, "saved_models", "model_NER.pth")
 test_csv = os.path.join(BASE_DIR, "../data/NER/test/conll2003_test.csv")
 word2vec_path = os.path.join(BASE_DIR, "models/word2vec-google-news-300.kv")
 dataset_fraction = 1.0  # Cambiar según el tamaño del conjunto de prueba que deseas usar
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=create_collate_fn())
 
     # Cargar el modelo NER
-    ner_model = load_ner(model_path, embedding_weights, device=device)
+    ner_model = load_ner("model_NER.pth", embedding_weights, device=device)
 
     # Evaluación del modelo
     test_acc = calculate_accuracy_NER(ner_model, test_dataloader, device=device)

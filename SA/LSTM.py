@@ -22,7 +22,7 @@ class RNN(nn.Module):
 
     def __init__(self, embedding_weights: torch.Tensor, hidden_dim: int, num_layers: int,
                  bidirectional: bool, dropout_p: float, output_dim: int = 1,
-                 use_attention: bool = True, hidden_fc: int = 128):
+                 use_attention: bool = True):
         super().__init__()
 
         embedding_dim = embedding_weights.shape[1]
@@ -44,14 +44,9 @@ class RNN(nn.Module):
 
         lstm_output_dim = hidden_dim * (2 if bidirectional else 1)
 
-        # Normalización + capas finales
-        self.classifier = nn.Sequential(
-            nn.LayerNorm(lstm_output_dim),
-            nn.Linear(lstm_output_dim, hidden_fc),
-            nn.ReLU(),
-            nn.Dropout(dropout_p),
-            nn.Linear(hidden_fc, output_dim)
-        )
+        # Normalización y capa lineal final
+        self.layer_norm = nn.LayerNorm(lstm_output_dim)
+        self.output_layer = nn.Linear(lstm_output_dim, output_dim)
 
     def attention_net(self, rnn_output: torch.Tensor, final_hidden: torch.Tensor) -> torch.Tensor:
         """
@@ -91,7 +86,8 @@ class RNN(nn.Module):
         # Atención o usar estado final directamente
         context = self.attention_net(rnn_output, final_hidden) if self.use_attention else final_hidden
 
-        # Clasificación final
-        output = self.classifier(context)  # [batch, output_dim]
+        # Normalización y capa final
+        norm_context = self.layer_norm(context)
+        output = self.output_layer(norm_context)
 
         return output  # Logits sin activación

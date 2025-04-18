@@ -6,6 +6,8 @@ import pandas as pd
 from SA.utils import load_model as load_sa_model
 from NER.utils import load_word2vec as load_w2v_ner
 from NER.utils import load_ner as load_ner_model
+
+
 def preprocess(text):
     return text.strip().lower().split()
 
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     embedding_weights = torch.tensor(word2vec.vectors, dtype=torch.float32)
 
     print("Loading SA model...")
-    sa_model = load_sa_model(os.path.join(BASE_DIR, "SA", "saved_models", "model_SAAtt_neutral.pth"), embedding_weights, device)
+    sa_model = load_sa_model(os.path.join(BASE_DIR, "SA", "saved_models", "model_SA_BiLSTMAtt.pth"), embedding_weights, device)
     sa_model.eval()
 
     print("Loading NER model...")
