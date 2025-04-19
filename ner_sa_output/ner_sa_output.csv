@@ -1,5 +1,5 @@
 caption,entities,sentiment
-Two men in uniform standing in front of a crowd.,"['a', 'crowd.']",neutral
+Two men in uniform standing in front of a crowd.,[],neutral
 A woman in a red dress smiles at the camera.,[],positive
 The company Apple is planning a big event in New York.,[],positive
 A cat is sleeping on the sofa in a sunny room.,"['a', 'sunny', 'room.']",positive

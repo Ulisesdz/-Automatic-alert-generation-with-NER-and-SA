@@ -63,6 +63,8 @@ if __name__ == "__main__":
 
     # Calculamos los weights
     weights = calculate_class_weights_sklearn(full_train_dataset.tag2idx,full_train_dataset)
+    #weights = [0.12007512766986284, 3.085166666666667, 4.496930212014134, 3.221341559879766, 5.497327213822894, 2.8518347338935572, 17.5990492653414, 5.922658522396742, 17.62952380952381, 0.0]
+    #weights = torch.tensor(weights, dtype=torch.float)
 
     # Crear el modelo con los embeddings preentrenados
     print(len(full_train_dataset.tag2idx),)
