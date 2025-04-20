@@ -12,6 +12,8 @@ from NER.utils import load_ner as load_ner_model
 idx2tag = {0: "O", 1: "B-PER", 2: "I-PER", 3: "B-ORG", 4: "I-ORG", 5: "B-LOC", 6: "I-LOC", 7: "B-MISC", 8: "I-MISC", 9: "<PAD>"}
 thresholds = (0.45, 0.55)
 
+MODEL_ID = "Salesforce/blip-image-captioning-base"
+
 
 def preprocess(text: str) -> list[str]:
     """
@@ -108,10 +110,8 @@ if __name__ == "__main__":
 
     # Load BLIP captioning model 
     print("Loading BLIP model...")
-    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-    blip_model = BlipForConditionalGeneration.from_pretrained(
-        "Salesforce/blip-image-captioning-base"
-    ).eval().to(device)
+    processor = BlipProcessor.from_pretrained(MODEL_ID)
+    blip_model = BlipForConditionalGeneration.from_pretrained(MODEL_ID).eval().to(device)
 
     # Load image-caption input CSV 
     image_folder = os.path.join(BASE_DIR, "../image_captions", "IMAGES")

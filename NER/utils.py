@@ -256,7 +256,7 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
             epochs_no_improve = 0
             save_model(
                     model, optimizer, epoch, 
-                    model_path="model_NER2.pth",
+                    model_path="model_NER.pth",
                     vocab_size=len(full_train_dataset.word2idx),
                     embedding_dim=embedding_dim,
                     tagset_size=len(full_train_dataset.tag2idx),
@@ -283,7 +283,7 @@ def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "mode
                hidden_dim=None, num_layers=None, dropout_p=None, pad_idx=None,
                word2idx=None, tag2idx=None):
     
-    models_path = os.path.join(BASE_DIR, "NER/saved_models")
+    models_path = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(models_path, exist_ok=True)
     model_path = os.path.join(models_path, model_path)
     
