@@ -12,7 +12,7 @@ path_input =  os.path.join("..","ner_sa_output", "ner_sa_output.csv")
 # Modelo para prompting
 MODEL_ID = "meta-llama/Llama-2-7b-chat-hf"
 OUTPUT_CSV = "generated_alerts.csv"
-TOKEN = "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"
+TOKEN = None
 
 
 # Promt para alert generation
