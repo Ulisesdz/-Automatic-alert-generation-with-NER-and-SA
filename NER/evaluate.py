@@ -25,7 +25,7 @@ if __name__ == "__main__":
     )
 
     # Cargar modelo
-    model = load_model("bilstm_model_0.9.pth", device="cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model("NER_model.pth", device="cuda" if torch.cuda.is_available() else "cpu")
 
     # Evaluación general
     test_acc = calculate_accuracy_NER(model, test_dataloader, device=device)
