@@ -41,9 +41,15 @@ class Sentiment140Dataset(Dataset):
         Returns:
             torch.Tensor: Tensor con los índices de las palabras en Word2Vec.
         """
-        indices = [self.word2vec.key_to_index[word] for word in tweet if word in self.word2vec.key_to_index]
+        indices = [
+            self.word2vec.key_to_index[word]
+            for word in tweet
+            if word in self.word2vec.key_to_index
+        ]
         if not indices:
-            indices = [0]  # Agregar padding si el tweet no tiene palabras en el vocabulario
+            indices = [
+                0
+            ]  # Agregar padding si el tweet no tiene palabras en el vocabulario
         return torch.tensor(indices, dtype=torch.long)
 
     def __len__(self) -> int:
@@ -59,41 +65,44 @@ class Conll2003Dataset(Dataset):
     """
     Dataset de PyTorch para el dataset CONLL2003 con Word2Vec.
     """
+
     def __init__(self, csv_path: str, word2vec_model: KeyedVectors):
         """
         Inicializa el dataset cargando las oraciones y las etiquetas de sentimiento desde un archivo CSV.
-        
+
         Args:
             csv_path (str): Ruta del archivo CSV con los datos tokenizados.
             word2vec_model (KeyedVectors): Modelo Word2Vec preentrenado.
         """
         if not os.path.exists(csv_path):
             raise FileNotFoundError(f"El archivo {csv_path} no fue encontrado.")
-        
+
         self.word2vec = word2vec_model
         df = pd.read_csv(csv_path)
 
         # Procesar las oraciones y las etiquetas de sentimiento
         self.sentences = df["sentence"].fillna("").apply(lambda x: x.split()).tolist()
         # Modificación para incluir "neutral" en las etiquetas
-        self.sentiments = torch.tensor(df["sentiment"].apply(self.sentiment_to_idx).tolist(), dtype=torch.long)
+        self.sentiments = torch.tensor(
+            df["sentiment"].apply(self.sentiment_to_idx).tolist(), dtype=torch.long
+        )
 
     def sentiment_to_idx(self, sentiment: str) -> int:
         """
         Convierte la etiqueta de sentimiento en un índice.
         0: negativo, 2: positivo, 1: neutral.
-        
+
         Args:
             sentiment (str): Etiqueta de sentimiento.
-        
+
         Returns:
             int: Índice correspondiente al sentimiento.
         """
-        if sentiment == 'positive':
+        if sentiment == "positive":
             return 2
-        elif sentiment == 'negative':
+        elif sentiment == "negative":
             return 0
-        elif sentiment == 'neutral':
+        elif sentiment == "neutral":
             return 1
         else:
             raise ValueError(f"Sentimiento desconocido: {sentiment}")
@@ -109,9 +118,15 @@ class Conll2003Dataset(Dataset):
         Returns:
             torch.Tensor: Tensor con los índices de las palabras en Word2Vec.
         """
-        indices = [self.word2vec.key_to_index[word] for word in sentence if word in self.word2vec.key_to_index]
+        indices = [
+            self.word2vec.key_to_index[word]
+            for word in sentence
+            if word in self.word2vec.key_to_index
+        ]
         if not indices:
-            indices = [0]  # Agregar padding si la oración no tiene palabras en el vocabulario
+            indices = [
+                0
+            ]  # Agregar padding si la oración no tiene palabras en el vocabulario
         return torch.tensor(indices, dtype=torch.long)
 
     def __len__(self) -> int:
@@ -121,9 +136,11 @@ class Conll2003Dataset(Dataset):
     def __getitem__(self, idx: int) -> Tuple[List[str], torch.Tensor]:
         """Retorna una oración tokenizada y su etiqueta de sentimiento."""
         return self.sentences[idx], self.sentiments[idx]
-    
+
+
 class CollateFn:
     """Clase para envolver `collate_fn` y pasar el modelo Word2Vec correctamente."""
+
     def __init__(self, word2vec_model):
         self.word2vec_model = word2vec_model
 
@@ -132,15 +149,21 @@ class CollateFn:
 
 
 def collate_fn(
-          batch: List[Tuple[List[str], int]], 
-          word2vec_model: KeyedVectors
-          )-> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    batch: List[Tuple[List[str], int]], word2vec_model: KeyedVectors
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Función para crear lotes con padding dinámico."""
     batch.sort(key=lambda x: len(x[0]), reverse=True)
     texts, labels = zip(*batch)
 
     texts_idx = [
-        torch.tensor([word2vec_model.key_to_index[word] for word in tweet if word in word2vec_model.key_to_index], dtype=torch.long)
+        torch.tensor(
+            [
+                word2vec_model.key_to_index[word]
+                for word in tweet
+                if word in word2vec_model.key_to_index
+            ],
+            dtype=torch.long,
+        )
         for tweet in texts
     ]
 

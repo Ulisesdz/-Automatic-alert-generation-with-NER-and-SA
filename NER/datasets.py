@@ -5,21 +5,35 @@ import pandas as pd
 import torch
 from torch.nn.utils.rnn import pad_sequence
 
+
 class NERWord2VecDataset(Dataset):
     def __init__(self, csv_path: str, word2idx: dict = None):
         if not os.path.exists(csv_path):
             raise FileNotFoundError(f"El archivo {csv_path} no fue encontrado.")
 
         df = pd.read_csv(csv_path)
-        self.sentences = df["tokens"].apply(lambda x: x.strip("[]").replace("'", "").split()).tolist()
-        self.ner_tags = df["ner_tags"].apply(lambda x: list(map(int, x.strip("[]").split()))).tolist()
+        self.sentences = (
+            df["tokens"]
+            .apply(lambda x: x.strip("[]").replace("'", "").split())
+            .tolist()
+        )
+        self.ner_tags = (
+            df["ner_tags"]
+            .apply(lambda x: list(map(int, x.strip("[]").split())))
+            .tolist()
+        )
 
         self.tag2idx = {
-            "O": 0, "B-PER": 1, "I-PER": 2,
-            "B-ORG": 3, "I-ORG": 4,
-            "B-LOC": 5, "I-LOC": 6,
-            "B-MISC": 7, "I-MISC": 8,
-            "<PAD>": -1
+            "O": 0,
+            "B-PER": 1,
+            "I-PER": 2,
+            "B-ORG": 3,
+            "I-ORG": 4,
+            "B-LOC": 5,
+            "I-LOC": 6,
+            "B-MISC": 7,
+            "I-MISC": 8,
+            "<PAD>": -1,
         }
 
         self.pad_idx = 0  # Reservamos el índice 0 para <PAD>
@@ -47,7 +61,9 @@ class NERWord2VecDataset(Dataset):
         """
 
         vocab = set(word for sentence in self.sentences for word in sentence)
-        self.word2idx = {word: idx + 1 for idx, word in enumerate(vocab)}  # idx + 1 to reserve 0 for PAD
+        self.word2idx = {
+            word: idx + 1 for idx, word in enumerate(vocab)
+        }  # idx + 1 to reserve 0 for PAD
         self.word2idx["<PAD>"] = self.pad_idx
 
     def words_to_indices(self, sentence: List[str]) -> torch.Tensor:
@@ -56,7 +72,7 @@ class NERWord2VecDataset(Dataset):
         Args:
             sentence (List[str]): A list of words to be converted into indices.
         Returns:
-            torch.Tensor: A tensor containing the indices of the words in the input sentence. 
+            torch.Tensor: A tensor containing the indices of the words in the input sentence.
                           If a word is not found in the mapping, a default padding index is used.
         """
 
@@ -88,19 +104,24 @@ def create_collate_fn():
             - padded_tags (torch.Tensor): A tensor of shape (batch_size, max_len) containing the padded tags, with a padding value of -1.
             - lengths (torch.Tensor): A tensor of shape (batch_size,) containing the original lengths of the sequences in the batch.
     """
-    def collate_fn(batch: List[Tuple[torch.Tensor, torch.Tensor]]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+
+    def collate_fn(
+        batch: List[Tuple[torch.Tensor, torch.Tensor]]
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         sentences, tags = zip(*batch)
-        
+
         # Usa la misma longitud máxima para ambos
         max_len = max(len(s) for s in sentences)
 
         padded_sentences = pad_sequence(sentences, batch_first=True, padding_value=0)
         padded_sentences = padded_sentences[:, :max_len]  # por si acaso
-        
+
         padded_tags = pad_sequence(tags, batch_first=True, padding_value=-1)
         padded_tags = padded_tags[:, :max_len]  # igualamos tamaño
 
-        lengths = torch.tensor([len(sentence) for sentence in sentences], dtype=torch.long)
+        lengths = torch.tensor(
+            [len(sentence) for sentence in sentences], dtype=torch.long
+        )
 
         return padded_sentences, padded_tags, lengths
 

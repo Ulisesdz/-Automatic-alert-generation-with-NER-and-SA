@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class RNN(nn.Module):
     """
     A Recurrent Neural Network (RNN) model for binary text classification.
@@ -19,9 +20,16 @@ class RNN(nn.Module):
         use_attention (bool): Si se aplica mecanismo de atención (True por defecto).
     """
 
-    def __init__(self, embedding_weights: torch.Tensor, hidden_dim: int, num_layers: int,
-                 bidirectional: bool, dropout_p: float, output_dim: int = 1,
-                 use_attention: bool = True):
+    def __init__(
+        self,
+        embedding_weights: torch.Tensor,
+        hidden_dim: int,
+        num_layers: int,
+        bidirectional: bool,
+        dropout_p: float,
+        output_dim: int = 1,
+        use_attention: bool = True,
+    ):
         super().__init__()
 
         embedding_dim = embedding_weights.shape[1]
@@ -38,7 +46,7 @@ class RNN(nn.Module):
             num_layers=num_layers,
             bidirectional=bidirectional,
             dropout=dropout_p if num_layers > 1 else 0,
-            batch_first=True
+            batch_first=True,
         )
 
         lstm_output_dim = hidden_dim * (2 if bidirectional else 1)
@@ -47,7 +55,9 @@ class RNN(nn.Module):
         self.layer_norm = nn.LayerNorm(lstm_output_dim)
         self.output_layer = nn.Linear(lstm_output_dim, output_dim)
 
-    def attention_net(self, rnn_output: torch.Tensor, final_hidden: torch.Tensor) -> torch.Tensor:
+    def attention_net(
+        self, rnn_output: torch.Tensor, final_hidden: torch.Tensor
+    ) -> torch.Tensor:
         """
         Aplica atención dot-product entre la salida de la LSTM y el estado final oculto.
 
@@ -58,9 +68,15 @@ class RNN(nn.Module):
         Returns:
             Tensor: Context vector atencional [batch, hidden_dim * num_directions]
         """
-        attn_weights = torch.bmm(rnn_output, final_hidden.unsqueeze(2)).squeeze(2)  # [batch, seq_len]
+        attn_weights = torch.bmm(rnn_output, final_hidden.unsqueeze(2)).squeeze(
+            2
+        )  # [batch, seq_len]
         attn_weights = torch.softmax(attn_weights, dim=1)
-        attn_output = torch.bmm(rnn_output.transpose(1, 2), attn_weights.unsqueeze(2)).squeeze(2)  # [batch, hidden*2]
+        attn_output = torch.bmm(
+            rnn_output.transpose(1, 2), attn_weights.unsqueeze(2)
+        ).squeeze(
+            2
+        )  # [batch, hidden*2]
         return attn_output
 
     def forward(self, x: torch.Tensor, text_lengths: torch.Tensor) -> torch.Tensor:
@@ -74,16 +90,24 @@ class RNN(nn.Module):
 
         # LSTM
         packed_output, (hidden, _) = self.rnn(packed_embedded)
-        rnn_output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
+        rnn_output, _ = nn.utils.rnn.pad_packed_sequence(
+            packed_output, batch_first=True
+        )
 
         # Concatenar estados ocultos si es bidireccional
         if self.bidirectional:
-            final_hidden = torch.cat((hidden[-2], hidden[-1]), dim=1)  # [batch, hidden*2]
+            final_hidden = torch.cat(
+                (hidden[-2], hidden[-1]), dim=1
+            )  # [batch, hidden*2]
         else:
             final_hidden = hidden[-1]  # [batch, hidden]
 
         # Atención o usar estado final directamente
-        context = self.attention_net(rnn_output, final_hidden) if self.use_attention else final_hidden
+        context = (
+            self.attention_net(rnn_output, final_hidden)
+            if self.use_attention
+            else final_hidden
+        )
 
         # Normalización y capa final
         norm_context = self.layer_norm(context)

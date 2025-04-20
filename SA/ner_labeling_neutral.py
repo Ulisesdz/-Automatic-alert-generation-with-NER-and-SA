@@ -32,10 +32,18 @@ if __name__ == "__main__":
 
     test_dataset = Conll2003Dataset(test_csv, word2vec_model)
     test_size = len(test_dataset)
-    test_dataset, _ = random_split(test_dataset, [test_size, len(test_dataset) - test_size],
-                                   generator=torch.Generator().manual_seed(42))
+    test_dataset, _ = random_split(
+        test_dataset,
+        [test_size, len(test_dataset) - test_size],
+        generator=torch.Generator().manual_seed(42),
+    )
 
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=CollateFn(word2vec_model))
+    test_dataloader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=CollateFn(word2vec_model),
+    )
 
     model = load_model(model_path, embedding_weights, device=device)
     model.eval()
@@ -53,8 +61,13 @@ if __name__ == "__main__":
             probs = torch.sigmoid(outputs).squeeze()
 
             pred_classes = torch.where(
-                probs < second_threshold[0], torch.tensor(0, device=device),
-                torch.where(probs > second_threshold[1], torch.tensor(2, device=device), torch.tensor(1, device=device))
+                probs < second_threshold[0],
+                torch.tensor(0, device=device),
+                torch.where(
+                    probs > second_threshold[1],
+                    torch.tensor(2, device=device),
+                    torch.tensor(1, device=device),
+                ),
             )
 
             predictions.extend(pred_classes.cpu().numpy())
@@ -73,30 +86,43 @@ if __name__ == "__main__":
     print(f"Neutros:   {pred_counter.get(1, 0)}")
     print(f"Positivos: {pred_counter.get(2, 0)}")
 
-    correct = sum([1 if int(p) == int(t) else 0 for p, t in zip(predictions, true_labels)])
+    correct = sum(
+        [1 if int(p) == int(t) else 0 for p, t in zip(predictions, true_labels)]
+    )
     total = len(true_labels)
     accuracy = correct / total * 100
     print(f"Porcentaje de coincidencias: {accuracy:.2f}%")
 
     plt.figure(figsize=(6, 4))
-    labels = ['Negative (0)', 'Neutral (1)', 'Positive (2)']
+    labels = ["Negative (0)", "Neutral (1)", "Positive (2)"]
     true_counts = [true_counter.get(i, 0) for i in range(3)]
     pred_counts = [pred_counter.get(i, 0) for i in range(3)]
 
     x = range(len(labels))
-    plt.bar(x, true_counts, width=0.4, label='True', align='center', alpha=0.7)
-    plt.bar([i + 0.4 for i in x], pred_counts, width=0.4, label='Predicted', align='center', alpha=0.7)
+    plt.bar(x, true_counts, width=0.4, label="True", align="center", alpha=0.7)
+    plt.bar(
+        [i + 0.4 for i in x],
+        pred_counts,
+        width=0.4,
+        label="Predicted",
+        align="center",
+        alpha=0.7,
+    )
 
     plt.xticks([i + 0.2 for i in x], labels)
-    plt.title(f"Class Distribution: True vs Predicted \
-    \n (Neutral: {second_threshold[0]}-{second_threshold[1]}) \n Matches: {accuracy:.2f}%")
+    plt.title(
+        f"Class Distribution: True vs Predicted \
+    \n (Neutral: {second_threshold[0]}-{second_threshold[1]}) \n Matches: {accuracy:.2f}%"
+    )
     plt.ylabel("Frequency")
     plt.legend()
-    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
     plt.tight_layout()
     plt.show()
 
-    test_df['predicted_sentiment'] = predictions
-    test_df[['sentence', 'sentiment', 'predicted_sentiment']].to_csv(result_path, index=False)
+    test_df["predicted_sentiment"] = predictions
+    test_df[["sentence", "sentiment", "predicted_sentiment"]].to_csv(
+        result_path, index=False
+    )
 
     print(f"Resultados guardados en {result_path}")

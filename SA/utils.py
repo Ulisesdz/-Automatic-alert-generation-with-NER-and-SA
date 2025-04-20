@@ -29,16 +29,25 @@ dataset_fraction: float = 0.1
 weight_decay: float = 5e-4
 use_attention: bool = True
 
+
 def save_model(model, optimizer, epoch, model_path: str = "model_SA_BiLSTMAtt.pth"):
     model_path = os.path.join("SA/saved_models", model_path)
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict()
-    }, model_path)
+    torch.save(
+        {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        },
+        model_path,
+    )
 
-def load_model(model_path: str = "model_SA_BiLSTMAtt.pth", embedding_weights=None, device: str = "cpu"):
+
+def load_model(
+    model_path: str = "model_SA_BiLSTMAtt.pth",
+    embedding_weights=None,
+    device: str = "cpu",
+):
     model_path = os.path.join("SA/saved_models", model_path)
     model = RNN(
         embedding_weights=embedding_weights,
@@ -47,13 +56,14 @@ def load_model(model_path: str = "model_SA_BiLSTMAtt.pth", embedding_weights=Non
         bidirectional=bidirectional,
         dropout_p=dropout_p,
         output_dim=1,
-        use_attention=use_attention
+        use_attention=use_attention,
     ).to(device)
 
     checkpoint = torch.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    model.load_state_dict(checkpoint["model_state_dict"])
     print(f"Modelo cargado desde {model_path}")
     return model
+
 
 def load_word2vec(local_path: str = "models/word2vec-google-news-300.kv"):
     local_path = os.path.join(BASE_DIR, local_path)
@@ -68,7 +78,10 @@ def load_word2vec(local_path: str = "models/word2vec-google-news-300.kv"):
         model.save(local_path)
         return model
 
-def calculate_accuracy_SA(model: torch.nn.Module, dataloader: DataLoader, device: str = 'cpu') -> float:
+
+def calculate_accuracy_SA(
+    model: torch.nn.Module, dataloader: DataLoader, device: str = "cpu"
+) -> float:
     model.to(device)
     model.eval()
     correct, total = 0, 0
@@ -80,13 +93,20 @@ def calculate_accuracy_SA(model: torch.nn.Module, dataloader: DataLoader, device
             probs = torch.sigmoid(outputs).squeeze()  # [batch_size]
 
             # Convertimos las probabilidades en clases 0 o 2
-            preds = torch.where(probs >= 0.5, torch.tensor(2.0, device=device), torch.tensor(0.0, device=device))
-            
+            preds = torch.where(
+                probs >= 0.5,
+                torch.tensor(2.0, device=device),
+                torch.tensor(0.0, device=device),
+            )
+
             correct += (preds == labels).sum().item()
             total += labels.size(0)
     return correct / total if total > 0 else 0.0
 
-def calculate_accuracy_SA_multiclass(model: torch.nn.Module, dataloader: DataLoader, device: str = 'cpu') -> float:
+
+def calculate_accuracy_SA_multiclass(
+    model: torch.nn.Module, dataloader: DataLoader, device: str = "cpu"
+) -> float:
     model.to(device)
     model.eval()
     correct, total = 0, 0
@@ -101,33 +121,40 @@ def calculate_accuracy_SA_multiclass(model: torch.nn.Module, dataloader: DataLoa
             # Asignar clase según el umbral:
             # < 0.4 -> 0 (negativo), 0.4-0.6 -> 1 (neutral), > 0.6 -> 2 (positivo)
             preds = torch.where(
-                probs < second_threshold[0], torch.tensor(0, device=device),
-                torch.where(probs > second_threshold[1], torch.tensor(2, device=device),
-                torch.tensor(1, device=device)))
+                probs < second_threshold[0],
+                torch.tensor(0, device=device),
+                torch.where(
+                    probs > second_threshold[1],
+                    torch.tensor(2, device=device),
+                    torch.tensor(1, device=device),
+                ),
+            )
 
             # Asegurarse de que las etiquetas también están en el mismo formato (0, 1, 2)
             labels = labels.long()
 
             correct += (preds == labels).sum().item()
             total += labels.size(0)
-    
+
     return correct / total if total > 0 else 0.0
 
 
-def train_torch_model(model: torch.nn.Module, 
-                      train_dataloader: DataLoader,
-                      val_dataloader: DataLoader, 
-                      criterion: torch.nn.Module,
-                      optimizer: optim.Optimizer, 
-                      epochs: int,
-                      print_every: int, 
-                      patience: int,
-                      scheduler=None,
-                      device: str = 'cpu') -> Tuple[Dict[int, float], Dict[int, float]]:
+def train_torch_model(
+    model: torch.nn.Module,
+    train_dataloader: DataLoader,
+    val_dataloader: DataLoader,
+    criterion: torch.nn.Module,
+    optimizer: optim.Optimizer,
+    epochs: int,
+    print_every: int,
+    patience: int,
+    scheduler=None,
+    device: str = "cpu",
+) -> Tuple[Dict[int, float], Dict[int, float]]:
     path = os.path.join(BASE_DIR, "SA/runs/training_logs")
     writer = SummaryWriter(path)
     train_accuracies, val_accuracies = {}, {}
-    best_loss, epochs_no_improve = float('inf'), 0
+    best_loss, epochs_no_improve = float("inf"), 0
     model.to(device)
 
     for epoch in range(epochs):
@@ -137,7 +164,9 @@ def train_torch_model(model: torch.nn.Module,
 
         for features, labels, text_len in train_dataloader:
             features, labels = features.to(device), labels.to(device).float()
-            labels_for_loss = torch.where(labels == 2.0, torch.tensor(1.0, device=device), labels)
+            labels_for_loss = torch.where(
+                labels == 2.0, torch.tensor(1.0, device=device), labels
+            )
 
             optimizer.zero_grad()
             outputs = model(features, text_len).squeeze(1)
@@ -153,27 +182,31 @@ def train_torch_model(model: torch.nn.Module,
             for features, labels, text_len in val_dataloader:
                 features, labels = features.to(device), labels.to(device).float()
                 outputs = model(features, text_len).squeeze(1)
-                labels_for_loss = torch.where(labels == 2.0, torch.tensor(1.0, device=device), labels)
+                labels_for_loss = torch.where(
+                    labels == 2.0, torch.tensor(1.0, device=device), labels
+                )
                 loss = criterion(outputs, labels_for_loss)
                 val_loss += loss.item()
 
         avg_train_loss = total_loss / len(train_dataloader)
         avg_val_loss = val_loss / len(val_dataloader)
 
-        writer.add_scalar('Loss/Train', avg_train_loss, epoch)
-        writer.add_scalar('Loss/Validation', avg_val_loss, epoch)
+        writer.add_scalar("Loss/Train", avg_train_loss, epoch)
+        writer.add_scalar("Loss/Validation", avg_val_loss, epoch)
 
         if epoch % print_every == 0 or epoch == epochs - 1:
             train_acc = calculate_accuracy_SA(model, train_dataloader, device)
             val_acc = calculate_accuracy_SA(model, val_dataloader, device)
             train_accuracies[epoch], val_accuracies[epoch] = train_acc, val_acc
 
-            print(f"Epoch {epoch + 1}/{epochs} | Train Loss: {avg_train_loss:.4f} | "
-                  f"Val Loss: {avg_val_loss:.4f} | "
-                  f"Train Acc: {train_acc * 100:.2f}% | Val Acc: {val_acc * 100:.2f}%")
+            print(
+                f"Epoch {epoch + 1}/{epochs} | Train Loss: {avg_train_loss:.4f} | "
+                f"Val Loss: {avg_val_loss:.4f} | "
+                f"Train Acc: {train_acc * 100:.2f}% | Val Acc: {val_acc * 100:.2f}%"
+            )
 
-            writer.add_scalar('Accuracy/Train', train_acc * 100, epoch)
-            writer.add_scalar('Accuracy/Validation', val_acc * 100, epoch)
+            writer.add_scalar("Accuracy/Train", train_acc * 100, epoch)
+            writer.add_scalar("Accuracy/Validation", val_acc * 100, epoch)
 
         # Scheduler
         if scheduler:

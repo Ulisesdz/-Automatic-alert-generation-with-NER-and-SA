@@ -6,20 +6,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # ==== CONFIGURACIÓN ====
-# Ruta a la carpeta test 
+# Ruta a la carpeta test
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_FOLDER = os.path.join(CURRENT_DIR, "..", "data", "IMAGES", "test")
 OUTPUT_CSV = os.path.join(CURRENT_DIR, "captions_example.csv")
-NUM_IMAGES = 10  # Número de imágenes a procesar 
+NUM_IMAGES = 10  # Número de imágenes a procesar
 
 # ==== CARGA DEL MODELO ====
 print("Cargando modelo BLIP...")
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+model = BlipForConditionalGeneration.from_pretrained(
+    "Salesforce/blip-image-captioning-base"
+)
 model.eval()
 
 # ==== PROCESAR IMÁGENES ====
-image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.jpg', '.png'))]
+image_files = [
+    f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith((".jpg", ".png"))
+]
 image_files = image_files[:NUM_IMAGES]
 
 results = []
@@ -39,7 +43,7 @@ for fname in image_files:
 
     # Mostrar imagen + caption
     plt.imshow(image)
-    plt.axis('off')
+    plt.axis("off")
     plt.title(caption, fontsize=12)
     plt.show()
 

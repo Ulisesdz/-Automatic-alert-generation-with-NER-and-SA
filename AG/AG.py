@@ -1,6 +1,5 @@
 import pandas as pd
 import ast
-from datasets import load_dataset
 import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
@@ -8,7 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
 # PATH A LOS RESULTADOS NER + SA
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-path_input =  os.path.join(BASE_DIR, "ner_sa_output.csv")
+path_input = os.path.join(BASE_DIR, "ner_sa_output.csv")
 
 # Modelo para prompting
 MODEL_ID = "meta-llama/Llama-2-7b-chat-hf"
@@ -81,31 +80,36 @@ def generar_alertas(df, pipe):
                 entities = ", ".join(parsed)
             else:
                 entities = str(entities)
-        #print("entidades", entities)
+        # print("entidades", entities)
         # Construcción de prompt
         prompt = base_prompt.format(
-            sentence=sentence,
-            entities=entities,
-            sentiment=sentiment
+            sentence=sentence, entities=entities, sentiment=sentiment
         )
-        #print("prompt",prompt)
+        # print("prompt",prompt)
         # Generación con el modelo
-        result = pipe(prompt, max_new_tokens=100, do_sample=True, temperature=0.7)[0]["generated_text"]
-        #print("resultado", result)
-        alert = result.strip().split("\n")[-2].strip()  # Obtener solo la alerta entre los mensajes de <ALERT> </ALERT>
+        result = pipe(prompt, max_new_tokens=100, do_sample=True, temperature=0.7)[0][
+            "generated_text"
+        ]
+        # print("resultado", result)
+        alert = (
+            result.strip().split("\n")[-2].strip()
+        )  # Obtener solo la alerta entre los mensajes de <ALERT> </ALERT>
         alerts.append(alert)
-        print("\n" )
+        print("\n")
         print(f" Sentence (combined text):\n{sentence}")
         print(f" Entities: {entities}")
         print(f" Sentiment: {sentiment}")
         print(f" Generated Alert:\n{alert}")
-        print("="*80)
+        print("=" * 80)
     return alerts
+
 
 def main():
     print("Cargando modelo y tokenizer de Llama...")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID,  token=TOKEN)
-    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, device_map="auto", torch_dtype=torch.float32, token=TOKEN)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=TOKEN)
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_ID, device_map="auto", torch_dtype=torch.float32, token=TOKEN
+    )
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
     print(f"Leyendo CSV desde: {path_input}")
@@ -113,10 +117,10 @@ def main():
 
     print("Generando alertas...")
     df["alert"] = generar_alertas(df, pipe)
-    
 
     print(f"Guardando en: {OUTPUT_CSV}")
     df.to_csv(OUTPUT_CSV, index=False)
+
 
 if __name__ == "__main__":
     main()

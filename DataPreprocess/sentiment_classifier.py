@@ -10,6 +10,7 @@ import warnings
 def extract_tokens(token_str):
     return re.findall(r"'(.*?)'", token_str)
 
+
 # Función para procesar un dataset: cargar, generar frases, análisis de sentimiento y guardar
 def process_dataset(input_path, output_path):
     print(f"Procesando: {input_path}")
@@ -27,7 +28,7 @@ def process_dataset(input_path, output_path):
         sentiment_analyzer = pipeline(
             "text-classification",
             model="j-hartmann/sentiment-roberta-large-english-3-classes",
-            return_all_scores=False
+            return_all_scores=False,
         )
     except Exception as e:
         print(f"Error al cargar el modelo: {e}")
@@ -39,7 +40,7 @@ def process_dataset(input_path, output_path):
     scores = []
 
     for i in range(0, len(sentences), 100):
-        batch = sentences[i:i+100]
+        batch = sentences[i: i + 100]
         results = sentiment_analyzer(batch)
         sentiments.extend([r["label"] for r in results])
         scores.extend([r["score"] for r in results])
@@ -53,20 +54,37 @@ def process_dataset(input_path, output_path):
     df.to_csv(output_path, index=False)
     print(f"Guardado en: {output_path}\n")
 
+
 # Paths de entrada y salida
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 datasets = {
     "train": {
         "input": Path(BASE_DIR) / "../data" / "NER" / "train" / "conll2003_train.csv",
-        "output": Path(BASE_DIR) / "../data" / "SA+NER" / "train" / "conll2003_train_SA_neutral.csv",
+        "output": Path(BASE_DIR)
+        / "../data"
+        / "SA+NER"
+        / "train"
+        / "conll2003_train_SA_neutral.csv",
     },
     "validation": {
-        "input": Path(BASE_DIR) / "../data" / "NER" / "train" / "conll2003_validation.csv",
-        "output": Path(BASE_DIR) / "../data" / "SA+NER" / "train" / "conll2003_validation_SA_neutral.csv",
+        "input": Path(BASE_DIR)
+        / "../data"
+        / "NER"
+        / "train"
+        / "conll2003_validation.csv",
+        "output": Path(BASE_DIR)
+        / "../data"
+        / "SA+NER"
+        / "train"
+        / "conll2003_validation_SA_neutral.csv",
     },
     "test": {
         "input": Path(BASE_DIR) / "../data" / "NER" / "test" / "conll2003_test.csv",
-        "output": Path(BASE_DIR) / "../data" / "SA+NER" / "test" / "conll2003_test_SA_neutral.csv",
+        "output": Path(BASE_DIR)
+        / "../data"
+        / "SA+NER"
+        / "test"
+        / "conll2003_test_SA_neutral.csv",
     },
 }
 
@@ -76,6 +94,6 @@ if __name__ == "__main__":
 
     result_path = Path(BASE_DIR) / "../data" / "SA+NER"
     os.makedirs(result_path, exist_ok=True)
-    
+
     for name, paths in datasets.items():
         process_dataset(paths["input"], paths["output"])

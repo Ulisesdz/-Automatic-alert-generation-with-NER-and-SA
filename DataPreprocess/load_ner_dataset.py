@@ -19,13 +19,21 @@ for split in splits:
         info = json.load(f)
 
     # Definir los features con etiquetas legibles
-    features = Features({
-        "id": Value("string"),
-        "tokens": Sequence(Value("string")),
-        "pos_tags": Sequence(ClassLabel(names=info["features"]["pos_tags"]["feature"]["names"])),
-        "chunk_tags": Sequence(ClassLabel(names=info["features"]["chunk_tags"]["feature"]["names"])),
-        "ner_tags": Sequence(ClassLabel(names=info["features"]["ner_tags"]["feature"]["names"]))
-    })
+    features = Features(
+        {
+            "id": Value("string"),
+            "tokens": Sequence(Value("string")),
+            "pos_tags": Sequence(
+                ClassLabel(names=info["features"]["pos_tags"]["feature"]["names"])
+            ),
+            "chunk_tags": Sequence(
+                ClassLabel(names=info["features"]["chunk_tags"]["feature"]["names"])
+            ),
+            "ner_tags": Sequence(
+                ClassLabel(names=info["features"]["ner_tags"]["feature"]["names"])
+            ),
+        }
+    )
 
     # Cargar el archivo .arrow
     arrow_filename = "data-00000-of-00001.arrow"
@@ -37,9 +45,15 @@ for split in splits:
     # Convertir índices a etiquetas legibles
     def decode_tags(example):
         return {
-            "pos_tags": [features["pos_tags"].feature.int2str(i) for i in example["pos_tags"]],
-            "chunk_tags": [features["chunk_tags"].feature.int2str(i) for i in example["chunk_tags"]],
-            "ner_tags": [features["ner_tags"].feature.int2str(i) for i in example["ner_tags"]],
+            "pos_tags": [
+                features["pos_tags"].feature.int2str(i) for i in example["pos_tags"]
+            ],
+            "chunk_tags": [
+                features["chunk_tags"].feature.int2str(i) for i in example["chunk_tags"]
+            ],
+            "ner_tags": [
+                features["ner_tags"].feature.int2str(i) for i in example["ner_tags"]
+            ],
         }
 
     dataset = dataset.map(decode_tags)

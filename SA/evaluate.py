@@ -18,7 +18,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # -------- Evaluación --------
 if __name__ == "__main__":
-
     # Cargar Word2Vec
     word2vec_model = load_word2vec(word2vec_path)
     embedding_weights = torch.tensor(word2vec_model.vectors, dtype=torch.float32)
@@ -29,7 +28,7 @@ if __name__ == "__main__":
     test_dataset, _ = random_split(
         test_dataset_full,
         [test_size, len(test_dataset_full) - test_size],
-        generator=torch.Generator().manual_seed(42)
+        generator=torch.Generator().manual_seed(42),
     )
 
     # Cargar datos
@@ -37,7 +36,7 @@ if __name__ == "__main__":
         test_dataset,
         batch_size=batch_size,
         shuffle=False,
-        collate_fn=CollateFn(word2vec_model)
+        collate_fn=CollateFn(word2vec_model),
     )
 
     # Cargar modelo

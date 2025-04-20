@@ -38,21 +38,39 @@ if __name__ == "__main__":
     # Dataset y splits
     full_train_dataset = Sentiment140Dataset(train_csv, word2vec_model)
     subset_size = int(len(full_train_dataset) * dataset_fraction)
-    full_train_subset, _ = random_split(full_train_dataset, [subset_size, len(full_train_dataset) - subset_size], generator=torch.Generator().manual_seed(42))
+    full_train_subset, _ = random_split(
+        full_train_dataset,
+        [subset_size, len(full_train_dataset) - subset_size],
+        generator=torch.Generator().manual_seed(42),
+    )
 
     train_size = int(0.8 * len(full_train_subset))
     val_size = len(full_train_subset) - train_size
-    train_dataset, val_dataset = random_split(full_train_subset, [train_size, val_size], generator=torch.Generator().manual_seed(42))
+    train_dataset, val_dataset = random_split(
+        full_train_subset,
+        [train_size, val_size],
+        generator=torch.Generator().manual_seed(42),
+    )
 
     full_test_dataset = Sentiment140Dataset(test_csv, word2vec_model)
     test_size = int(len(full_test_dataset) * dataset_fraction)
-    test_dataset, _ = random_split(full_test_dataset, [test_size, len(full_test_dataset) - test_size], generator=torch.Generator().manual_seed(42))
+    test_dataset, _ = random_split(
+        full_test_dataset,
+        [test_size, len(full_test_dataset) - test_size],
+        generator=torch.Generator().manual_seed(42),
+    )
 
     # DataLoaders
     collate_fn = CollateFn(word2vec_model)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn
+    )
+    val_dataloader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn
+    )
+    test_dataloader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn
+    )
 
     # Modelo
     embedding_weights = torch.tensor(word2vec_model.vectors, dtype=torch.float32)
@@ -63,14 +81,16 @@ if __name__ == "__main__":
         bidirectional=bidirectional,
         dropout_p=dropout_p,
         output_dim=1,
-        use_attention=use_attention
+        use_attention=use_attention,
     ).to(device)
 
     # Loss, optimizer y scheduler
     criterion = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(rnn_model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(
+        rnn_model.parameters(), lr=learning_rate, weight_decay=weight_decay
+    )
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='max', factor=0.5, patience=2, verbose=True
+        optimizer, mode="max", factor=0.5, patience=2, verbose=True
     )
 
     # Entrenamiento
@@ -84,7 +104,7 @@ if __name__ == "__main__":
         print_every,
         patience,
         scheduler=scheduler,
-        device=device
+        device=device,
     )
 
     # Evaluación final
@@ -100,13 +120,19 @@ if __name__ == "__main__":
     rnn_epochs, train_accuracies = zip(*sorted(train_accuracies.items()))
     _, val_accuracies = zip(*sorted(val_accuracies.items()))
 
-    plt.plot(rnn_epochs, train_accuracies, label='RNN Train', linestyle='-', color='blue')
-    plt.plot(rnn_epochs, val_accuracies, label='RNN Validation', linestyle='--', color='blue')
-    plt.axhline(y=test_acc, label='RNN Test', linestyle='-.', color='lightblue', alpha=0.5)
-    plt.suptitle('Recurrent Neural Network Accuracy Evolution')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
+    plt.plot(
+        rnn_epochs, train_accuracies, label="RNN Train", linestyle="-", color="blue"
+    )
+    plt.plot(
+        rnn_epochs, val_accuracies, label="RNN Validation", linestyle="--", color="blue"
+    )
+    plt.axhline(
+        y=test_acc, label="RNN Test", linestyle="-.", color="lightblue", alpha=0.5
+    )
+    plt.suptitle("Recurrent Neural Network Accuracy Evolution")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
     plt.legend()
-    plt.grid(True, linestyle=':', alpha=0.5)
+    plt.grid(True, linestyle=":", alpha=0.5)
     plt.tight_layout()
     plt.show()

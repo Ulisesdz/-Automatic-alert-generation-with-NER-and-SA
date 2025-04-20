@@ -4,7 +4,12 @@ from torch.utils.data import DataLoader
 
 # funciones y clases propias
 from NER.datasets import NERWord2VecDataset, create_collate_fn
-from NER.utils import calculate_accuracy_NER, calculate_accuracy_per_tag, calculate_confusion_matrix_NER, load_ner
+from NER.utils import (
+    calculate_accuracy_NER,
+    calculate_accuracy_per_tag,
+    calculate_confusion_matrix_NER,
+    load_ner,
+)
 
 # -------- Configuración --------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,9 +21,10 @@ batch_size = 32
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
-    
     # Cargar modelo
-    model, word2idx, tag2idx, pad_idx = load_ner("model_NER.pth", device="cuda" if torch.cuda.is_available() else "cpu")
+    model, word2idx, tag2idx, pad_idx = load_ner(
+        "model_NER.pth", device="cuda" if torch.cuda.is_available() else "cpu"
+    )
 
     # Cargar dataset
     test_dataset = NERWord2VecDataset(test_csv, word2idx=word2idx)
@@ -27,7 +33,7 @@ if __name__ == "__main__":
         test_dataset,
         batch_size=batch_size,
         shuffle=False,
-        collate_fn=create_collate_fn()
+        collate_fn=create_collate_fn(),
     )
 
     # Evaluación general
@@ -39,7 +45,9 @@ if __name__ == "__main__":
     print("\nAccuracy por etiqueta (NER):")
     for tag in sorted(tag_accuracy.keys(), key=lambda t: tag2idx[t]):
         info = tag_accuracy[tag]
-        print(f"{str(tag2idx[tag]):8s} → {info['accuracy']:.4f}  (Correctas: {info['correct']}, Totales: {info['total']})")
+        print(
+            f"{str(tag2idx[tag]):8s} → {info['accuracy']:.4f}  (Correctas: {info['correct']}, Totales: {info['total']})"
+        )
 
     # Matriz de confusión
     calculate_confusion_matrix_NER(model, test_dataloader, tag2idx, device=device)
