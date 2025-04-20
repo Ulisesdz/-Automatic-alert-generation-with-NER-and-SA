@@ -113,3 +113,4 @@ Model Configurations
 python -m AG.inference_pipeline
 python -m AG.AG
 ```
+Another option if the downloading and prediction of the model takes too long it to upload the ner_sa_output.csv and the AG.py to colab, which is faster. No adaptations to the code have to be done.
