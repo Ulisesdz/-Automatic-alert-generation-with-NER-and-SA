@@ -241,7 +241,7 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            save_model(model, optimizer, epoch, f"mismo.pth")  
+            save_model(model, f"mismo_1.pth")  
         else:
             epochs_no_improve += 1
             patience_left = patience - epochs_no_improve
@@ -253,57 +253,19 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
     return train_accuracies, val_accuracies
 
 
-def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "model_NER.pth"):
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    models_path = os.path.join(BASE_DIR, "saved_models")
-    os.makedirs(models_path, exist_ok=True)
-    full_model_path = os.path.join(models_path, model_path)
-
-    # Obtener hiperparámetros clave
-    vocab_size = model.embedding.num_embeddings
-    embedding_dim = model.embedding.embedding_dim
-    hidden_dim = model.hidden_dim
-    output_dim = model.output_dim
-    pad_idx = model.pad_idx
-
-    # Guardar todo
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'vocab_size': vocab_size,
-        'embedding_dim': embedding_dim,
-        'hidden_dim': hidden_dim,
-        'output_dim': output_dim,
-        'pad_idx': pad_idx
-    }, full_model_path)
-
-
-
-def load_model(model_path: str, device: str = "cpu"):
-    from LSTM import BiLSTM  # Evita import circular
-
+def save_model(model, model_path: str):
+    # Guardar el modelo completo
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     full_path = os.path.join(BASE_DIR, "saved_models", model_path)
-    assert os.path.exists(full_path), f"No se encuentra el modelo en {full_path}"
+    torch.save(model, full_path)
 
-    checkpoint = torch.load(full_path, map_location=device)
-
-    model = BiLSTM(
-        vocab_size=checkpoint['vocab_size'],
-        embedding_dim=checkpoint['embedding_dim'],
-        hidden_dim=checkpoint['hidden_dim'],
-        tagset_size=checkpoint['output_dim'],
-        pad_idx=checkpoint['pad_idx'],
-        num_layers=2,
-        dropout_rate=0.5
-    )
-    model.load_state_dict(checkpoint['model_state_dict'])
+def load_model(model_path: str, device: str = 'cpu'):
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(BASE_DIR, "saved_models", model_path)
+    model = torch.load(full_path)
     model.to(device)
-    model.eval()
-
+    model.eval()  # Establecer el modelo en modo evaluación
     return model
-
 
 def evaluate(rnn_model, train_dataloader, val_dataloader, test_dataloader, device, full_train_dataset):
     # Final evaluation on train, validation, and test datasets
