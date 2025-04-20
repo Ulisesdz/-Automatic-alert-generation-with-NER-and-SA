@@ -33,11 +33,10 @@ These are the named entities found in the text, with their types in parentheses.
 This is the overall sentiment detected in the text (positive, negative, or neutral).
 </SENTIMENT>
 
-Your task is to generate an alert in a single sentence. The alert must mention the detected sentiment and the main entities and summarize the input.
+Your task is to generate an alert in a single sentence. The alert must always mention the sentiment and entities (if provided) and summarize the input.
 The tone should be clear and concise, as if it were a notification from an intelligent monitoring system. Do not add any information that is not explicitly present in the input.
-If no entities are provided, just resume the input and name the sentiment.
 
-Your output should be one natural-sounding sentence in English that combines all these elements.
+Your output should be one natural-sounding sentence in English, you must always provide an alert.
 
 </INSTRUCTIONS_FOR_YOU>
 
