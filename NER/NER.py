@@ -2,9 +2,9 @@ import torch
 from torch.utils.data import DataLoader, random_split
 
 # funciones y clases propias
-from LSTM import BiLSTM
-from utils import train_torch_model, calculate_class_weights_sklearn, evaluate
-from datasets import NERWord2VecDataset, create_collate_fn
+from NER.LSTM import BiLSTM
+from NER.utils import train_torch_model, calculate_class_weights_sklearn, evaluate
+from NER.datasets import NERWord2VecDataset, create_collate_fn
 
 # Hiperparámetros
 batch_size: int = 32
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Cargar datasets
-    train_csv = "../data/NER/train/conll2003_train.csv"
-    test_csv = "../data/NER/test/conll2003_test.csv"
+    train_csv = "data/NER/train/conll2003_train.csv"
+    test_csv = "data/NER/test/conll2003_test.csv"
 
     # Carga solo para obtener vocabulario y etiquetas, no embeddings
     full_train_dataset = NERWord2VecDataset(train_csv)

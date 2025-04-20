@@ -3,13 +3,13 @@ import torch
 from torch.utils.data import DataLoader
 
 # funciones y clases propias
-from datasets import NERWord2VecDataset, create_collate_fn
-from utils import calculate_accuracy_NER, calculate_accuracy_per_tag, calculate_confusion_matrix_NER, load_ner
+from NER.datasets import NERWord2VecDataset, create_collate_fn
+from NER.utils import calculate_accuracy_NER, calculate_accuracy_per_tag, calculate_confusion_matrix_NER, load_ner
 
 # -------- Configuración --------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 test_csv = os.path.join(BASE_DIR, "../data/NER/test/conll2003_test.csv")
-word2vec_path = os.path.join(BASE_DIR, "models/word2vec-google-news-300.kv")
+word2vec_path = os.path.join(BASE_DIR, "NER/models/word2vec-google-news-300.kv")
 dataset_fraction = 1.0
 batch_size = 32
 

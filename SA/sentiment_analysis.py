@@ -4,9 +4,9 @@ from torch.utils.data import DataLoader, random_split
 import matplotlib.pyplot as plt
 
 # funciones y clases propias
-from LSTM import RNN
-from utils import calculate_accuracy_SA, train_torch_model, load_word2vec
-from datasets import Sentiment140Dataset, CollateFn
+from SA.LSTM import RNN
+from SA.utils import calculate_accuracy_SA, train_torch_model, load_word2vec
+from SA.datasets import Sentiment140Dataset, CollateFn
 
 # HIPERPARÁMETROS
 batch_size: int = 64

@@ -30,7 +30,7 @@ weight_decay: float = 5e-4
 use_attention: bool = True
 
 def save_model(model, optimizer, epoch, model_path: str = "model_SA_BiLSTMAtt.pth"):
-    model_path = os.path.join("saved_models", model_path)
+    model_path = os.path.join("SA/saved_models", model_path)
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     torch.save({
         'epoch': epoch,
@@ -39,7 +39,7 @@ def save_model(model, optimizer, epoch, model_path: str = "model_SA_BiLSTMAtt.pt
     }, model_path)
 
 def load_model(model_path: str = "model_SA_BiLSTMAtt.pth", embedding_weights=None, device: str = "cpu"):
-    model_path = os.path.join("saved_models", model_path)
+    model_path = os.path.join("SA/saved_models", model_path)
     model = RNN(
         embedding_weights=embedding_weights,
         hidden_dim=hidden_dim,
@@ -124,7 +124,7 @@ def train_torch_model(model: torch.nn.Module,
                       patience: int,
                       scheduler=None,
                       device: str = 'cpu') -> Tuple[Dict[int, float], Dict[int, float]]:
-    path = os.path.join(BASE_DIR, "runs/training_logs")
+    path = os.path.join(BASE_DIR, "SA/runs/training_logs")
     writer = SummaryWriter(path)
     train_accuracies, val_accuracies = {}, {}
     best_loss, epochs_no_improve = float('inf'), 0

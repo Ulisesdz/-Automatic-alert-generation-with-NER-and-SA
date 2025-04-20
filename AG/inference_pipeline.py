@@ -1,22 +1,10 @@
-"""
-inference_pipeline.py
-
-This script performs inference on image-caption pairs by:
-1. Generating image captions using BLIP.
-2. Combining generated captions with existing ones.
-3. Running Sentiment Analysis (SA) and Named Entity Recognition (NER).
-4. Saving the results (including detected entities, sentiment, and combined text) to CSV.
-
-The pipeline loads pretrained models for BLIP (captioning), SA (BiLSTM), and NER (BiLSTM).
-"""
-
 import os
 import torch
 import pandas as pd
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
 
-# Load model utilities
+# funciones y clases propias
 from SA.utils import load_model as load_sa_model, load_word2vec
 from NER.utils import load_ner as load_ner_model
 
@@ -95,13 +83,9 @@ if __name__ == "__main__":
 
     # === Paths configuration ===
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    w2v_path = os.path.join(BASE_DIR, "SA", "models", "word2vec-google-news-300.kv")
-    caption_csv = os.path.join(BASE_DIR, "image_captions", "captions_output.csv")
-    output_folder = os.path.join(BASE_DIR, "ner_sa_output")
-    output_csv = os.path.join(output_folder, "ner_sa_output.csv")
-
-    # Ensure output directory exists
-    os.makedirs(output_folder, exist_ok=True)
+    w2v_path = os.path.join(BASE_DIR, "../SA", "models", "word2vec-google-news-300.kv")
+    caption_csv = os.path.join(BASE_DIR, "../image_captions", "captions_output.csv")
+    output_csv = os.path.join(BASE_DIR, "ner_sa_output.csv")
 
     # Load pretrained models 
     print("Loading Word2Vec...")
@@ -110,7 +94,7 @@ if __name__ == "__main__":
 
     print("Loading Sentiment Analysis model...")
     sa_model = load_sa_model(
-        os.path.join(BASE_DIR, "SA", "saved_models", "model_SA_BiLSTMAtt.pth"),
+        os.path.join(BASE_DIR, "../SA", "saved_models", "model_SA_BiLSTMAtt.pth"),
         embedding_weights,
         device
     )
@@ -118,7 +102,7 @@ if __name__ == "__main__":
 
     print("Loading NER model...")
     ner_model, word2idx, tag2idx, pad_idx = load_ner_model(
-        os.path.join(BASE_DIR, "NER", "saved_models", "model_NER.pth"), device
+        os.path.join(BASE_DIR, "../NER", "saved_models", "model_NER.pth"), device
     )
     ner_model.eval()
 
@@ -130,8 +114,8 @@ if __name__ == "__main__":
     ).eval().to(device)
 
     # Load image-caption input CSV 
-    image_folder = os.path.join(BASE_DIR, "image_captions", "DATA", "IMAGES")
-    caption_input_path = os.path.join(BASE_DIR, "image_captions", "captions_input.csv")
+    image_folder = os.path.join(BASE_DIR, "../image_captions", "IMAGES")
+    caption_input_path = os.path.join(BASE_DIR, "../image_captions", "captions_input.csv")
     df_input = pd.read_csv(caption_input_path)
 
     combined_captions = []

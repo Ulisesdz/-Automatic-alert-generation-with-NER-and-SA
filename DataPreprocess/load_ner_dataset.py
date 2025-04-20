@@ -52,8 +52,8 @@ for split in splits:
         df[col] = df[col].apply(lambda x: str(x))
 
     # Crear directorios si no existen
-    train_dir = os.path.join(BASE_DIR, "data", "NER", "train")
-    test_dir = os.path.join(BASE_DIR, "data", "NER", "test")
+    train_dir = os.path.join(BASE_DIR, "../data", "NER", "train")
+    test_dir = os.path.join(BASE_DIR, "../data", "NER", "test")
     os.makedirs(train_dir, exist_ok=True)
     os.makedirs(test_dir, exist_ok=True)
 

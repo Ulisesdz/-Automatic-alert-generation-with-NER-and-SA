@@ -3,13 +3,13 @@ import torch
 from torch.utils.data import DataLoader, random_split
 
 # Funciones y clases propias
-from utils import calculate_accuracy_SA, load_word2vec, load_model
-from datasets import Sentiment140Dataset, CollateFn
+from SA.utils import calculate_accuracy_SA, load_word2vec, load_model
+from SA.datasets import Sentiment140Dataset, CollateFn
 
 # -------- Configuración --------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-test_csv = os.path.join(BASE_DIR, "..", "data", "SA", "test", "sentiment140_test.csv")
+test_csv = os.path.join(BASE_DIR, "../data", "SA", "test", "sentiment140_test.csv")
 word2vec_path = os.path.join(BASE_DIR, "models", "word2vec-google-news-300.kv")
 dataset_fraction = 0.1
 batch_size = 64

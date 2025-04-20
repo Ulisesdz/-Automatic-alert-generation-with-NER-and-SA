@@ -6,8 +6,8 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 # funciones y clases propias
-from datasets import Conll2003Dataset, CollateFn
-from utils import load_word2vec, load_model
+from SA.datasets import Conll2003Dataset, CollateFn
+from SA.utils import load_word2vec, load_model
 
 # -------- Configuración --------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,7 +15,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "saved_models/model_SA_BiLSTMAtt.pth")
 test_csv = os.path.join(BASE_DIR, "../data/SA+NER/test/conll2003_test_SA_neutral.csv")
 word2vec_path = os.path.join(BASE_DIR, "models/word2vec-google-news-300.kv")
-result_path = os.path.join(BASE_DIR, "../SA/SA+NER/results_neutral.csv")
+result_path = os.path.join(BASE_DIR, "SA+NER/results_neutral.csv")
 batch_size = 64
 second_threshold = (0.35, 0.65)
 
