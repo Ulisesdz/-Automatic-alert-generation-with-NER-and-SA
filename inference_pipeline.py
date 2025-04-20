@@ -93,19 +93,62 @@ if __name__ == "__main__":
     ner_model.eval()
     resultados = []
 
+    # === NUEVO: Cargar imágenes y generar captions con BLIP ===
+    from transformers import BlipProcessor, BlipForConditionalGeneration
+    from PIL import Image
+
+    print("Cargando modelo BLIP...")
+    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+    blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").eval().to(device)
+
+    # Carpeta donde están las imágenes asociadas
+    image_folder = os.path.join(BASE_DIR, "image_captions", "DATA", "IMAGES")
+
+    # Leer captions_input.csv 
+    caption_input_path = os.path.join(BASE_DIR, "image_captions", "captions_input.csv")
+    df_input = pd.read_csv(caption_input_path)
+
+    combined_captions = []
+
+    for _, row in df_input.iterrows():
+        img_name = row["image_name"]
+        original_caption = row["caption"]
+
+        img_path = os.path.join(image_folder, img_name)
+        if not os.path.exists(img_path):
+            print(f" Imagen no encontrada: {img_path}")
+            continue
+
+        image = Image.open(img_path).convert("RGB")
+
+        inputs = processor(images=image, return_tensors="pt").to(device)
+        with torch.no_grad():
+            output = blip_model.generate(**inputs, max_length=50)
+        generated = processor.decode(output[0], skip_special_tokens=True)
+
+        combined = f"{original_caption} {generated}"
+        combined_captions.append((img_name, original_caption, generated, combined))
+
+
     print("Procesando captions...\n")
 
-    for caption in captions:
-        entidades = predict_entities(caption)
-        sentimiento = predict_sentiment(caption)
+    for img_name, original_caption, generated, combined_caption in combined_captions:
+        entidades = predict_entities(combined_caption)
+        sentimiento = predict_sentiment(combined_caption)
 
-        print(f"Caption: {caption}")
+        print(f"Imagen: {img_name}")
+        print(f"Caption original: {original_caption}")
+        print(f"Caption generado: {generated}")
+        print(f"Texto combinado: {combined_caption}")
         print(f"Entidades: {entidades}")
         print(f"Sentimiento: {sentimiento}")
         print("─" * 50)
 
         resultados.append({
-            "caption": caption,
+            "image_name": img_name,
+            "original_caption": original_caption,
+            "generated_caption": generated,
+            "combined_text": combined_caption,
             "entities": entidades,
             "sentiment": sentimiento
         })
@@ -113,30 +156,3 @@ if __name__ == "__main__":
     df_out = pd.DataFrame(resultados)
     df_out.to_csv(output_csv, index=False)
     print(f"\nResultados guardados en: {output_csv}")
-
-
-
-# # === PROCESAR CAPTIONS ===
-
-# df = pd.read_csv(caption_csv)
-# resultados = []
-
-# print("Procesando captions...")
-
-# for _, row in df.iterrows():
-#     img = row["image_name"]
-#     caption = row["caption"]
-
-#     entidades = predict_entities(caption)
-#     sentimiento = predict_sentiment(caption)
-
-#     resultados.append({
-#         "image_name": img,
-#         "caption": caption,
-#         "entities": entidades,
-#         "sentiment": sentimiento
-#     })
-
-# df_out = pd.DataFrame(resultados)
-# df_out.to_csv(output_csv, index=False)
-# print(f"\n Resultados guardados en: {output_csv}")
