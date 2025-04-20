@@ -6,7 +6,9 @@ models/
 runs/
 *.py[cod]
 *$py.class
-*.pth
+model_SA_BiLSTMAtt.pth
+model_SAAttBat_neutral.pth
+model_SAAtt_neutral.pth
 
 # C extensions
 *.so
