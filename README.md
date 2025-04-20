@@ -38,6 +38,7 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 
 ├── DataPreprocess/                      # Data preprocessing scripts
 │   ├── download_datasets.py
+│   ├── download_SAmodel.py
 │   ├── load_ner_dataset.py
 │   ├── SA_preprocess.py
 │   └── sentiment_classifier.py
@@ -80,11 +81,13 @@ pip install -r requirements.txt
 ```
 ### Data Downloading and Preprocessing
 This step will create the raw_data/ and data/ folders and download/process the necessary datasets.
+It will also download the SA model via a Google Drive link due to its large size.
 ```bash
 python -m DataPreprocess.download_datasets
 python -m DataPreprocess.load_ner_dataset
 python -m DataPreprocess.SA_preprocess
 python -m DataPreprocess.sentiment_classifier
+python -m DataPreprocess.download_SAmodel
 ```
 ### Train NER and SA Models
 To modify hyperparameters, edit:
