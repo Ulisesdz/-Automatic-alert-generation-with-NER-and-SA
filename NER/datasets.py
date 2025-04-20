@@ -30,11 +30,36 @@ class NERWord2VecDataset(Dataset):
             self.word2idx = word2idx
 
     def build_vocab(self):
+        """
+        Builds a vocabulary from the sentences in the dataset.
+        This method creates a set of unique words from all the sentences in the dataset
+        and assigns each word a unique index. It also reserves the index 0 for padding
+        by adding a special token "<PAD>" to the vocabulary.
+
+        Attributes:
+            self.sentences : list of list of str
+                A list where each element is a sentence represented as a list of words.
+            self.word2idx : dict
+                A dictionary mapping each unique word to a unique index. The special token
+                "<PAD>" is mapped to the index specified by `self.pad_idx`.
+            self.pad_idx : int
+                The index reserved for the padding token "<PAD>".
+        """
+
         vocab = set(word for sentence in self.sentences for word in sentence)
         self.word2idx = {word: idx + 1 for idx, word in enumerate(vocab)}  # idx + 1 to reserve 0 for PAD
         self.word2idx["<PAD>"] = self.pad_idx
 
     def words_to_indices(self, sentence: List[str]) -> torch.Tensor:
+        """
+        Converts a list of words into their corresponding indices based on a predefined word-to-index mapping.
+        Args:
+            sentence (List[str]): A list of words to be converted into indices.
+        Returns:
+            torch.Tensor: A tensor containing the indices of the words in the input sentence. 
+                          If a word is not found in the mapping, a default padding index is used.
+        """
+
         indices = [self.word2idx.get(word, self.pad_idx) for word in sentence]
         return torch.tensor(indices, dtype=torch.long)
 
@@ -51,6 +76,18 @@ class NERWord2VecDataset(Dataset):
 
 # Collate function for padding sequences
 def create_collate_fn():
+    """
+    Creates a collate function for batching sequences and their corresponding tags.
+    The returned collate function processes a batch of sequences and their tags by:
+    - Padding the sequences and tags to the same maximum length within the batch.
+    - Truncating sequences and tags to the maximum length if necessary.
+    - Returning the padded sequences, padded tags, and the original lengths of the sequences.
+    Returns:
+        Callable: A collate function that takes a batch of data and returns a tuple containing:
+            - padded_sentences (torch.Tensor): A tensor of shape (batch_size, max_len) containing the padded sequences.
+            - padded_tags (torch.Tensor): A tensor of shape (batch_size, max_len) containing the padded tags, with a padding value of -1.
+            - lengths (torch.Tensor): A tensor of shape (batch_size,) containing the original lengths of the sequences in the batch.
+    """
     def collate_fn(batch: List[Tuple[torch.Tensor, torch.Tensor]]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         sentences, tags = zip(*batch)
         

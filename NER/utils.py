@@ -68,6 +68,18 @@ def calculate_confusion_matrix_NER(model: torch.nn.Module, dataloader: DataLoade
 
 # Función para calcular los pesos de clase (pesos inversos)
 def calculate_class_weights_sklearn(tag2idx, dataset):
+    """Calculates class weights for a Named Entity Recognition (NER) task using scikit-learn's `compute_class_weight` function.
+    This function computes the weights for each class based on the frequency of their occurrence in the dataset. 
+    The weights are then returned as a PyTorch tensor, where each index corresponds to a class, and the padding index (if present) is assigned a weight of 0.
+    Args:
+        tag2idx (dict): A dictionary mapping NER tags to their corresponding indices. 
+                        For example, {'O': 0, 'B-PER': 1, 'I-PER': 2, ...}.
+        dataset (Dataset): A dataset object containing a `ner_tags` attribute, which is a list of lists where each sublist 
+                           contains the NER tag indices for a sentence.
+    Returns:
+        torch.Tensor: A tensor of class weights where the index corresponds to the class index. 
+                      Padding index (if present) is assigned a weight of 0."""
+
     all_tags = []
 
     for tags in dataset.ner_tags:
@@ -282,6 +294,38 @@ def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "mode
                vocab_size=None, embedding_dim=None, tagset_size=None,
                hidden_dim=None, num_layers=None, dropout_p=None, pad_idx=None,
                word2idx=None, tag2idx=None):
+    """
+    Saves the state of a PyTorch model along with its optimizer and additional metadata.
+    Args:
+        model (torch.nn.Module): The PyTorch model to be saved.
+        optimizer (torch.optim.Optimizer): The optimizer associated with the model.
+        epoch (int): The current epoch number, to be saved for resuming training.
+        model_path (str, optional): The filename for saving the model. Defaults to "model_NER.pth".
+        vocab_size (int, optional): The size of the vocabulary used in the model. Defaults to None.
+        embedding_dim (int, optional): The dimensionality of the embedding layer. Defaults to None.
+        tagset_size (int, optional): The number of tags in the tagset. Defaults to None.
+        hidden_dim (int, optional): The size of the hidden layer in the model. Defaults to None.
+        num_layers (int, optional): The number of layers in the model. Defaults to None.
+        dropout_p (float, optional): The dropout probability used in the model. Defaults to None.
+        pad_idx (int, optional): The index used for padding in the vocabulary. Defaults to None.
+        word2idx (dict, optional): A dictionary mapping words to their corresponding indices. Defaults to None.
+        tag2idx (dict, optional): A dictionary mapping tags to their corresponding indices. Defaults to None.
+    Saves:
+        A dictionary containing:
+            - 'epoch': The current epoch number.
+            - 'model_state_dict': The state dictionary of the model.
+            - 'optimizer_state_dict': The state dictionary of the optimizer.
+            - 'vocab_size': The size of the vocabulary.
+            - 'embedding_dim': The dimensionality of the embedding layer.
+            - 'tagset_size': The number of tags in the tagset.
+            - 'hidden_dim': The size of the hidden layer.
+            - 'num_layers': The number of layers in the model.
+            - 'dropout_p': The dropout probability.
+            - 'pad_idx': The padding index.
+            - 'word2idx': The word-to-index mapping.
+            - 'tag2idx': The tag-to-index mapping.
+    The model and metadata are saved in the "saved_models" directory within the BASE_DIR.
+    """
     
     models_path = os.path.join(BASE_DIR, "saved_models")
     os.makedirs(models_path, exist_ok=True)
@@ -304,6 +348,35 @@ def save_model(model: torch.nn.Module, optimizer, epoch, model_path: str = "mode
 
 
 def load_ner(model_path: str = "model_NER.pth", device: str = "cpu"):
+    """
+    Load a pre-trained Named Entity Recognition (NER) model from a checkpoint file.
+    Args:
+        model_path (str): The relative path to the model checkpoint file. 
+                          Defaults to "model_NER.pth".
+        device (str): The device to load the model onto ("cpu" or "cuda"). 
+                      Defaults to "cpu".
+    Returns:
+        tuple: A tuple containing:
+            - model (BiLSTM): The loaded NER model.
+            - word2idx (dict): A dictionary mapping words to their corresponding indices.
+            - tag2idx (dict): A dictionary mapping tags to their corresponding indices.
+            - pad_idx (int): The index used for padding in the model.
+    Raises:
+        FileNotFoundError: If the specified model checkpoint file does not exist.
+        RuntimeError: If there is an issue loading the model state dictionary.
+    Note:
+        The function assumes that the checkpoint file contains the following keys:
+        - 'vocab_size': Size of the vocabulary.
+        - 'embedding_dim': Dimension of the word embeddings.
+        - 'tagset_size': Number of unique tags in the NER task.
+        - 'hidden_dim': Dimension of the hidden layers in the BiLSTM model.
+        - 'num_layers': Number of layers in the BiLSTM model.
+        - 'dropout_p': Dropout rate used during training.
+        - 'pad_idx': Padding index used in the model.
+        - 'model_state_dict': State dictionary of the trained model.
+        - 'word2idx': Dictionary mapping words to indices.
+        - 'tag2idx': Dictionary mapping tags to indices.
+    """
     model_path = os.path.join("NER/saved_models", model_path)
     
     # Cargar el checkpoint
@@ -331,6 +404,23 @@ def load_ner(model_path: str = "model_NER.pth", device: str = "cpu"):
 
 
 def evaluate(rnn_model, train_dataloader, val_dataloader, test_dataloader, device, full_train_dataset):
+    """
+    Evaluates the performance of a Named Entity Recognition (NER) model on training, validation, 
+    and test datasets. Additionally, computes accuracy per tag and generates a confusion matrix.
+    Args:
+        rnn_model (torch.nn.Module): The trained RNN-based NER model to evaluate.
+        train_dataloader (torch.utils.data.DataLoader): DataLoader for the training dataset.
+        val_dataloader (torch.utils.data.DataLoader): DataLoader for the validation dataset.
+        test_dataloader (torch.utils.data.DataLoader): DataLoader for the test dataset.
+        device (torch.device): The device (CPU or GPU) to perform computations on.
+        full_train_dataset (Dataset): The full training dataset containing tag-to-index mapping (tag2idx).
+    Returns:
+        None: This function prints the evaluation results, including:
+            - Training, validation, and test accuracy.
+            - Accuracy per tag for the test dataset.
+            - Confusion matrix for the test dataset.
+    """
+
     # Final evaluation on train, validation, and test datasets
     train_acc = calculate_accuracy_NER(rnn_model, train_dataloader, device=device)
     val_acc = calculate_accuracy_NER(rnn_model, val_dataloader, device=device)
