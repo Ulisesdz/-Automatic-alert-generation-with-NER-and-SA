@@ -69,7 +69,7 @@ def clean_entities(entities_str):
 def generar_alertas(df, pipe):
     alerts = []
     for _, row in df.iterrows():
-        sentence = row["caption"]
+        sentence = row["combined_text"]
         entities = row["entities"]
         sentiment = row["sentiment"]
 
@@ -87,10 +87,8 @@ def generar_alertas(df, pipe):
             entities=entities,
             sentiment=sentiment
         )
-        print("prompt",prompt)
         # Generación con el modelo
         result = pipe(prompt, max_new_tokens=100, do_sample=True, temperature=0.7)[0]["generated_text"]
-        print("resultado", result)
         alert = result.strip().split("\n")[-2].strip()  # Obtener solo la alerta entre los mensajes de <ALERT> </ALERT>
         alerts.append(alert)
     return alerts
