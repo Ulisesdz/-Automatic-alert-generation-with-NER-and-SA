@@ -241,7 +241,7 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            save_model(model, f"mismo_1.pth")  
+            save_model(model, f"NER_model.pth")  
         else:
             epochs_no_improve += 1
             patience_left = patience - epochs_no_improve
@@ -256,12 +256,12 @@ def train_torch_model(model: torch.nn.Module, train_dataloader: DataLoader,
 def save_model(model, model_path: str):
     # Guardar el modelo completo
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    full_path = os.path.join(BASE_DIR, "saved_models", model_path)
+    full_path = os.path.join(BASE_DIR, "models", model_path)
     torch.save(model, full_path)
 
 def load_model(model_path: str, device: str = 'cpu'):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    full_path = os.path.join(BASE_DIR, "saved_models", model_path)
+    full_path = os.path.join(BASE_DIR, "models", model_path)
     model = torch.load(full_path)
     model.to(device)
     model.eval()  # Establecer el modelo en modo evaluación
