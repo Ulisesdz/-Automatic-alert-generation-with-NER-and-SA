@@ -3,27 +3,47 @@ import torch
 import pandas as pd
 
 # Importación de funciones y clases
-from SA.utils import load_model as load_sa_model
-from NER.utils import load_word2vec as load_w2v_ner
+from SA.utils import load_model as load_sa_model, load_word2vec
 from NER.utils import load_ner as load_ner_model
+
+# Definir las etiquetas y umbrales
+idx2tag = {0: "O", 1: "B-PER", 2: "I-PER", 3: "B-ORG", 4: "I-ORG", 5: "B-LOC", 6: "I-LOC", 7: "B-MISC", 8: "I-MISC", 9: "<PAD>"}
+thresholds = (0.45, 0.55)
+captions = [
+    "Two men in uniform standing in front of a crowd.",
+    "A woman in a red dress smiles at the camera.",
+    "The company Apple is planning a big event in New York.",
+    "A cat is sleeping on the sofa in a sunny room."
+]
 
 
 def preprocess(text):
     return text.strip().lower().split()
 
 def predict_entities(text):
+    # Preprocesar el texto
     tokens = preprocess(text)
-    indices = [word2vec.key_to_index.get(tok, 0) for tok in tokens]
+    
+    # Convertir tokens a índices utilizando el 'word2idx' del modelo NER
+    indices = [word2idx.get(tok, pad_idx) for tok in tokens]  # Usamos pad_idx si no está en el vocabulario
     input_tensor = torch.tensor(indices, dtype=torch.long).unsqueeze(0).to(device)
 
     with torch.no_grad():
+        # Longitudes de las secuencias
         lengths = torch.tensor([input_tensor.shape[1]], dtype=torch.long).to(device)
+        
+        # Pasar el tensor de entrada a través del modelo NER
         outputs = ner_model(input_tensor, lengths)[0]
-
+        
+        # Obtener las predicciones de las etiquetas (etiquetas de las entidades)
         predicted_tags = outputs.argmax(dim=-1).squeeze(0).cpu().numpy()
 
+    # Convertir las etiquetas de vuelta a las entidades
     etiquetas = [idx2tag[idx] for idx in predicted_tags[:len(tokens)]]
+    
+    # Filtrar las entidades que no sean "O" (no entidad)
     entidades = [tok for tok, tag in zip(tokens, etiquetas) if tag != "O"]
+    
     return entidades
 
 def predict_sentiment(text):
@@ -61,7 +81,7 @@ if __name__ == "__main__":
 
     # Cargar modelos
     print("Loading Word2Vec...")
-    word2vec = load_w2v_ner(w2v_path)
+    word2vec = load_word2vec(w2v_path)
     embedding_weights = torch.tensor(word2vec.vectors, dtype=torch.float32)
 
     print("Loading SA model...")
@@ -69,23 +89,8 @@ if __name__ == "__main__":
     sa_model.eval()
 
     print("Loading NER model...")
-    ner_model = load_ner_model(os.path.join(BASE_DIR, "NER", "saved_models", "model_NER.pth"), embedding_weights, device)
+    ner_model, word2idx, tag2idx, pad_idx = load_ner_model(os.path.join(BASE_DIR, "NER", "saved_models", "model_NER.pth"), device)
     ner_model.eval()
-
-    # Definir las etiquetas y umbrales
-    idx2tag = {0: "O", 1: "B-PER", 2: "I-PER", 3: "B-ORG", 4: "I-ORG", 5: "B-LOC", 6: "I-LOC", 7: "B-MISC", 8: "I-MISC", 9: "<PAD>"}
-    thresholds = (0.45, 0.55)
-
-
-    # === PROCESAR SOLO CAPTIONS (SIN IMÁGENES) ===
-
-    captions = [
-        "Two men in uniform standing in front of a crowd.",
-        "A woman in a red dress smiles at the camera.",
-        "The company Apple is planning a big event in New York.",
-        "A cat is sleeping on the sofa in a sunny room."
-    ]
-
     resultados = []
 
     print("Procesando captions...\n")

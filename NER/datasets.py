@@ -3,7 +3,6 @@ from typing import List, Tuple
 import os
 import pandas as pd
 import torch
-from gensim.models import KeyedVectors
 from torch.nn.utils.rnn import pad_sequence
 
 class NERWord2VecDataset(Dataset):
@@ -48,7 +47,6 @@ class NERWord2VecDataset(Dataset):
         sentence_indices = self.words_to_indices(sentence)
         tag_indices = torch.tensor(tags, dtype=torch.long)
         return sentence_indices, tag_indices
-
 
 
 # Collate function for padding sequences

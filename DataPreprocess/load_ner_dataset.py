@@ -1,6 +1,5 @@
 import os
 import json
-import pandas as pd
 from datasets import Dataset, Features, Sequence, Value, ClassLabel
 
 # Ruta base

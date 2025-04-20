@@ -1,6 +1,5 @@
 import pandas as pd
 import ast
-from datasets import load_dataset
 import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
@@ -13,7 +12,7 @@ path_input =  os.path.join("..","ner_sa_output", "ner_sa_output.csv")
 # Modelo para prompting
 MODEL_ID = "meta-llama/Llama-2-7b-chat-hf"
 OUTPUT_CSV = "generated_alerts.csv"
-TOKEN = None
+TOKEN = "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"
 
 
 # Promt para alert generation
@@ -99,7 +98,7 @@ def generar_alertas(df, pipe):
 def main():
     print("Cargando modelo y tokenizer de Llama...")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID,  token=TOKEN)
-    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, device_map="auto", torch_dtype="auto", token=TOKEN)
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, device_map="auto", torch_dtype=torch.float32, token=TOKEN)
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
     print(f"Leyendo CSV desde: {path_input}")

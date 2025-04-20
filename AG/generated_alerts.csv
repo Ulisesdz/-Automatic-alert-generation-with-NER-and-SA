@@ -1,0 +1,5 @@
+caption,entities,sentiment,alert
+Two men in uniform standing in front of a crowd.,"['uniform', 'front', 'crowd.']",neutral,Crowd gathering in front of uniformed individuals.
+A woman in a red dress smiles at the camera.,['camera.'],positive,The camera captures a positive image of a woman in a red dress.
+The company Apple is planning a big event in New York.,['apple'],positive,"Apple plans New York event, sentiment positive."
+A cat is sleeping on the sofa in a sunny room.,['sunny'],positive,"Sunny room detected, cat sleeping. Positive sentiment observed."

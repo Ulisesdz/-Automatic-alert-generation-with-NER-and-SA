@@ -1,12 +1,14 @@
 import torch
 from torch.utils.data import DataLoader, random_split
-from LSTM import BiLSTM  # Ahora usa capa de embedding interna
-from utils import train_torch_model, calculate_class_weights_sklearn, evaluate  
+
+# funciones y clases propias
+from LSTM import BiLSTM
+from utils import train_torch_model, calculate_class_weights_sklearn, evaluate
 from datasets import NERWord2VecDataset, create_collate_fn
 
 # Hiperparámetros
 batch_size: int = 32
-epochs: int = 50
+epochs: int = 50                                                        
 print_every: int = 5
 patience: int = 2
 learning_rate: float = 0.001
@@ -17,9 +19,6 @@ bidirectional: bool = True
 embedding_dim = 300
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-train_csv = "../data/NER/train/conll2003_train.csv"
-test_csv = "../data/NER/test/conll2003_test.csv"
-
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -29,7 +28,7 @@ if __name__ == "__main__":
 
     # Carga solo para obtener vocabulario y etiquetas, no embeddings
     full_train_dataset = NERWord2VecDataset(train_csv)
-    vocab_size = len(full_train_dataset.word2idx)  # Nuevo: tamaño del vocabulario
+    vocab_size = len(full_train_dataset.word2idx)  
 
     # Split 80/20
     train_size = int(0.8 * len(full_train_dataset))
@@ -66,7 +65,8 @@ if __name__ == "__main__":
     # Entrenamiento
     train_accuracies, val_accuracies = train_torch_model(
         rnn_model, train_dataloader, val_dataloader, criterion,
-        optimizer, epochs, print_every, patience, device=device
+        optimizer, epochs, print_every, patience, full_train_dataset,
+        device=device
     )
 
     # Evaluación

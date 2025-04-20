@@ -12,12 +12,12 @@ from utils import load_word2vec, load_model
 # -------- Configuración --------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-model_path = os.path.join(BASE_DIR, "saved_models/model_SAAtt_neutral.pth")
+model_path = os.path.join(BASE_DIR, "saved_models/model_SA_BiLSTMAtt.pth")
 test_csv = os.path.join(BASE_DIR, "../data/SA+NER/test/conll2003_test_SA_neutral.csv")
 word2vec_path = os.path.join(BASE_DIR, "models/word2vec-google-news-300.kv")
 result_path = os.path.join(BASE_DIR, "../SA/SA+NER/results_neutral.csv")
 batch_size = 64
-second_threshold = (0.1, 0.9)
+second_threshold = (0.35, 0.65)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -79,18 +79,18 @@ if __name__ == "__main__":
     print(f"Porcentaje de coincidencias: {accuracy:.2f}%")
 
     plt.figure(figsize=(6, 4))
-    labels = ['Negativo (0)', 'Neutro (1)', 'Positivo (2)']
+    labels = ['Negative (0)', 'Neutral (1)', 'Positive (2)']
     true_counts = [true_counter.get(i, 0) for i in range(3)]
     pred_counts = [pred_counter.get(i, 0) for i in range(3)]
 
     x = range(len(labels))
-    plt.bar(x, true_counts, width=0.4, label='Verdaderas', align='center', alpha=0.7)
-    plt.bar([i + 0.4 for i in x], pred_counts, width=0.4, label='Predichas', align='center', alpha=0.7)
+    plt.bar(x, true_counts, width=0.4, label='True', align='center', alpha=0.7)
+    plt.bar([i + 0.4 for i in x], pred_counts, width=0.4, label='Predicted', align='center', alpha=0.7)
 
     plt.xticks([i + 0.2 for i in x], labels)
-    plt.title(f"Distribución de clases: verdaderas vs predichas \
-    \n (Neutro: {second_threshold[0]}-{second_threshold[1]}) \n Coincidencias: {accuracy:.2f}%")
-    plt.ylabel("Frecuencia")
+    plt.title(f"Class Distribution: True vs Predicted \
+    \n (Neutral: {second_threshold[0]}-{second_threshold[1]}) \n Matches: {accuracy:.2f}%")
+    plt.ylabel("Frequency")
     plt.legend()
     plt.grid(axis='y', linestyle='--', alpha=0.5)
     plt.tight_layout()
@@ -98,4 +98,5 @@ if __name__ == "__main__":
 
     test_df['predicted_sentiment'] = predictions
     test_df[['sentence', 'sentiment', 'predicted_sentiment']].to_csv(result_path, index=False)
+
     print(f"Resultados guardados en {result_path}")
