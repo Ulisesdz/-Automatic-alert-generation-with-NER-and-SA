@@ -1,5 +1,5 @@
-caption,entities,sentiment,alert
-Two men in uniform standing in front of a crowd.,"['uniform', 'front', 'crowd.']",neutral,Crowd gathering in front of uniformed individuals.
-A woman in a red dress smiles at the camera.,['camera.'],positive,The camera captures a positive image of a woman in a red dress.
-The company Apple is planning a big event in New York.,['apple'],positive,"Apple plans New York event, sentiment positive."
-A cat is sleeping on the sofa in a sunny room.,['sunny'],positive,"Sunny room detected, cat sleeping. Positive sentiment observed."
+image_name,original_caption,generated_caption,combined_text,entities,sentiment,alert
+crowd.jpg,Two men in uniform standing in front of a crowd.,a crowd of people at a concert,Two men in uniform standing in front of a crowd. a crowd of people at a concert,"['uniform', 'front', 'concert']",positive,Concertgoers in a positive mood as they watch two men in uniform standing in front of them.
+woman.jpg,A woman in a red dress smiles at the camera.,a woman in a red dress,A woman in a red dress smiles at the camera. a woman in a red dress,[],positive,Positive sentiment detected in image of woman in red dress.
+apple.jpg,The company Apple is planning a big event in New York.,a tall building,The company Apple is planning a big event in New York. a tall building,"['apple', 'tall', 'building']",positive,"Apple to host major event in New York City, sentiment is positive. Named entities include Apple and building."
+cat.jpg,A cat is sleeping on the sofa in a sunny room.,a cat laying on a couch,A cat is sleeping on the sofa in a sunny room. a cat laying on a couch,[],positive,Cat detected sleeping on sofa in sunny room with positive sentiment.
