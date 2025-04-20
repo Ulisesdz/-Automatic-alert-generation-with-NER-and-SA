@@ -81,7 +81,7 @@ class Conll2003Dataset(Dataset):
     def sentiment_to_idx(self, sentiment: str) -> int:
         """
         Convierte la etiqueta de sentimiento en un índice.
-        0: negativo, 1: positivo, 2: neutral.
+        0: negativo, 2: positivo, 1: neutral.
         
         Args:
             sentiment (str): Etiqueta de sentimiento.

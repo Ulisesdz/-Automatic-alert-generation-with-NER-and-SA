@@ -6,7 +6,7 @@ class RNN(nn.Module):
     A Recurrent Neural Network (RNN) model for binary text classification.
 
     Utiliza embeddings preentrenados, una capa LSTM bidireccional, un mecanismo
-    de atención (opcional), normalización, y un bloque final con capas lineales
+    de atención (opcional), normalización, y un capa lineal
     para clasificar textos en dos clases (0 o 1).
 
     Args:
@@ -17,7 +17,6 @@ class RNN(nn.Module):
         dropout_p (float): Dropout aplicado en la LSTM y capa oculta final.
         output_dim (int): Salida (por defecto 1 para clasificación binaria).
         use_attention (bool): Si se aplica mecanismo de atención (True por defecto).
-        hidden_fc (int): Tamaño de la capa oculta antes de la salida.
     """
 
     def __init__(self, embedding_weights: torch.Tensor, hidden_dim: int, num_layers: int,
