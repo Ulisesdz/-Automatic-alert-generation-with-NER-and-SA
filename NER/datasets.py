@@ -7,17 +7,13 @@ from gensim.models import KeyedVectors
 from torch.nn.utils.rnn import pad_sequence
 
 class NERWord2VecDataset(Dataset):
-    def __init__(self, csv_path: str, word2vec_model: KeyedVectors):
+    def __init__(self, csv_path: str, word2idx: dict = None):
         if not os.path.exists(csv_path):
             raise FileNotFoundError(f"El archivo {csv_path} no fue encontrado.")
 
-        self.word2vec = word2vec_model
         df = pd.read_csv(csv_path)
-
-        # Procesar las oraciones y las etiquetas como listas
         self.sentences = df["tokens"].apply(lambda x: x.strip("[]").replace("'", "").split()).tolist()
         self.ner_tags = df["ner_tags"].apply(lambda x: list(map(int, x.strip("[]").split()))).tolist()
-        # Para NER mapea directamente a una lista de indices por que ya esta en indices
 
         self.tag2idx = {
             "O": 0, "B-PER": 1, "I-PER": 2,
@@ -27,36 +23,32 @@ class NERWord2VecDataset(Dataset):
             "<PAD>": -1
         }
 
+        self.pad_idx = 0  # Reservamos el índice 0 para <PAD>
 
-    def words_to_w2v_indices(self, sentence: List[str]) -> torch.Tensor:
-        """
-        Convierte una lista de palabras en una lista de índices de Word2Vec.
-        Se ignoran las palabras que no están en el vocabulario del modelo.
+        if word2idx is None:
+            self.build_vocab()
+        else:
+            self.word2idx = word2idx
 
-        Args:
-            sentence (List[str]): Lista de tokens de una oración.
+    def build_vocab(self):
+        vocab = set(word for sentence in self.sentences for word in sentence)
+        self.word2idx = {word: idx + 1 for idx, word in enumerate(vocab)}  # idx + 1 to reserve 0 for PAD
+        self.word2idx["<PAD>"] = self.pad_idx
 
-        Returns:
-            torch.Tensor: Tensor con los índices de las palabras en Word2Vec.
-        """
-        indices = [self.word2vec.key_to_index[word] for word in sentence if word in self.word2vec.key_to_index]
-        if not indices:
-            indices = [0]  # Manejo básico por si ninguna palabra está en Word2Vec
+    def words_to_indices(self, sentence: List[str]) -> torch.Tensor:
+        indices = [self.word2idx.get(word, self.pad_idx) for word in sentence]
         return torch.tensor(indices, dtype=torch.long)
 
     def __len__(self) -> int:
-        """Devuelve la cantidad de oraciones en el dataset."""
         return len(self.sentences)
-    
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Retorna su frase tokenizada y los ner labels tokenizados."""
         sentence = self.sentences[idx]
         tags = self.ner_tags[idx]
-
-        sentence_indices = self.words_to_w2v_indices(sentence) # Pasamos palabras a indices con word2vec
-        tag_indices = torch.tensor(tags, dtype=torch.long) # Ya vienen en indices, pasamos solo a tensor
-
+        sentence_indices = self.words_to_indices(sentence)
+        tag_indices = torch.tensor(tags, dtype=torch.long)
         return sentence_indices, tag_indices
+
 
 
 # Collate function for padding sequences
