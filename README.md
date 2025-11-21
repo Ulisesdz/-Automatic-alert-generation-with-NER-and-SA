@@ -72,7 +72,7 @@ Automatic-Alert-Generation-WITH-NER-AND-SA/
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/Ulisesdz/-Automatic-alert-generation-with-NER-and-SA.git
+git clone https://github.com/Ulisesdz/NER-SA-AutomaticAlertGenerator.git
  cd .\-Automatic-alert-generation-with-NER-and-SA\
 ```
 ### Install Required Dependencies
